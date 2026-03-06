@@ -33,14 +33,24 @@ Perfect for integration with iOS Shortcuts to share text, images, and files betw
 ## 🏗️ Architecture
 
 ```
-iOS Shortcuts ──> clip_server (0.0.0.0:3000) ──> clip_client ──> Windows Clipboard
+iOS Shortcuts ──> clip_server (0.0.0.0:3000) ──> clip_client ──> System Clipboard
 ```
 
 ### Components
 
 - **clip_server**: Axum-based HTTP server with async tokio runtime
-- **clip_client**: CLI tool using reqwest for HTTP and arboard for clipboard operations
+- **clip_client**: CLI tool using reqwest for HTTP and arboard for cross-platform clipboard operations
 - **clip_token_gen**: Secure token generation tool for authentication
+
+### Platform Support
+
+**Client (clip_client):**
+- ✅ **Windows 10+**: Full clipboard support (text, images, files)
+- ✅ **macOS 10.13+**: Full clipboard support (text, images, files)
+- ✅ **Linux**: Full clipboard support on Wayland and X11 (text, images, files)
+
+**Server (clip_server):**
+- ✅ **Windows, macOS, Linux**: Runs on any platform with Rust support
 
 ## 🔐 Authentication
 
@@ -98,7 +108,18 @@ $env:CLIPSHARE_TOKEN="your_generated_token_here"
 ### Prerequisites
 
 - Rust 1.70+ installed
+- One of the following operating systems:
+  - **Windows 10+** (for client)
+  - **macOS 10.13+** (for client)
+  - **Linux** with Wayland or X11 (for client)
 - Local Wi-Fi network for device communication
+
+**Platform-specific notes:**
+
+- **Linux/Wayland**: Ensure your Wayland compositor supports clipboard operations (most modern compositors like GNOME, KDE Plasma, Sway do)
+- **Linux/X11**: No additional requirements - works out of the box
+- **macOS**: Grant clipboard permissions when prompted
+- **Windows**: No additional requirements - works out of the box
 
 ### Installation
 
@@ -216,6 +237,35 @@ For automatic startup and background operation, install the client as a system s
 - **Windows (Service)**: See [services/README.md](services/README.md#windows)
 
 📖 **[Complete Service Setup Guide →](services/README.md)**
+
+### Cross-Platform Clipboard Support
+
+The ClipShare client supports clipboard operations on all major platforms:
+
+**Windows:**
+- ✅ Text clipboard (copy/paste)
+- ✅ Image clipboard (PNG images copied directly to clipboard)
+- ✅ File saving (images and files saved to disk)
+- No additional setup required
+
+**macOS:**
+- ✅ Text clipboard (copy/paste)
+- ✅ Image clipboard (PNG images copied directly to clipboard)
+- ✅ File saving (images and files saved to disk)
+- Grant clipboard permissions when prompted
+
+**Linux:**
+- ✅ Text clipboard (copy/paste) on both X11 and Wayland
+- ✅ Image clipboard (PNG images copied directly to clipboard)
+- ✅ File saving (images and files saved to disk)
+- Supported Wayland compositors: GNOME, KDE Plasma, Sway, and others
+- Supported X11 environments: All standard desktop environments
+
+**Image Handling:**
+- The client attempts to copy PNG images directly to the clipboard
+- If clipboard image copy fails (e.g., unsupported format or permissions), the image is automatically saved to a file instead
+- Supported image format: PNG (base64 encoded)
+- Images are decoded and converted to RGBA format for cross-platform compatibility
 
 ## 📱 iOS Shortcuts Integration
 
@@ -438,7 +488,10 @@ const TOKEN_ENV_VAR: &str = "CLIPSHARE_TOKEN";  // Environment variable for auth
 
 **Can't access server from other devices:**
 - Ensure server is running on 0.0.0.0 (not 127.0.0.1)
-- Check Windows Firewall settings
+- Check firewall settings:
+  - **Windows**: Windows Firewall settings
+  - **macOS**: System Preferences → Security & Privacy → Firewall
+  - **Linux**: `ufw` or `firewalld` settings
 - Verify devices are on the same Wi-Fi network
 - Confirm correct IP address in iOS Shortcut
 - Verify authentication token matches between server and client
@@ -457,8 +510,11 @@ const TOKEN_ENV_VAR: &str = "CLIPSHARE_TOKEN";  // Environment variable for auth
 - Check network connectivity
 
 **"Failed to write to clipboard":**
-- Close other applications using the clipboard
-- Run client with elevated permissions if needed
+- **All platforms**: Close other applications using the clipboard
+- **Windows**: Run client with elevated permissions if needed
+- **macOS**: Grant clipboard permissions in System Preferences
+- **Linux (Wayland)**: Ensure your compositor supports clipboard operations
+- **Linux (X11)**: Install `xclip` or `xsel` package if needed
 
 **"Authentication failed - invalid or missing token":**
 - Ensure `CLIPSHARE_TOKEN` environment variable is set
