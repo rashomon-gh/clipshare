@@ -7,3 +7,8 @@ version = "0.1.0"
 edition = "2021"
 license = "MIT"
 authors = ["Your Name <your.email@example.com>"]
+
+[workspace.dependencies]
+# Shared development dependencies for testing
+tokio-test = "0.4"
+serial_test = "3.0"

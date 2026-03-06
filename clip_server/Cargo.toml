@@ -3,6 +3,14 @@ name = "clip_server"
 version.workspace = true
 edition.workspace = true
 
+[lib]
+name = "clip_server"
+path = "src/lib.rs"
+
+[[bin]]
+name = "clip_server"
+path = "src/main.rs"
+
 [dependencies]
 # Web framework for building the REST API
 axum = "0.7"
@@ -24,3 +32,11 @@ dotenvy = "0.15"
 mime = "0.3"
 # Base64 encoding for binary data
 base64 = "0.21"
+
+[dev-dependencies]
+# HTTP client for testing
+reqwest = { version = "0.11", features = ["json"] }
+# Async test utilities
+tokio-test = "0.4"
+# Test environment handling
+serial_test = "3.0"
