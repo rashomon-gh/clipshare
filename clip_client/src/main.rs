@@ -4,6 +4,9 @@ use reqwest::Client;
 use serde::Deserialize;
 use std::env;
 use std::time::Duration;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
+use tokio::time::interval;
 
 // Base64 encoding support
 use base64::prelude::*;
@@ -12,9 +15,10 @@ use base64::prelude::*;
 const SERVER_URL: &str = "http://127.0.0.1:3000/clipboard";
 const REQUEST_TIMEOUT: u64 = 5; // seconds
 const TOKEN_ENV_VAR: &str = "CLIPSHARE_TOKEN";
+const DEFAULT_POLL_INTERVAL: u64 = 2; // seconds
 
 /// Response structure for clipboard content from the server
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone, PartialEq)]
 #[serde(tag = "type", content = "data")]
 enum ClipboardContent {
     #[serde(rename = "text")]
@@ -25,15 +29,157 @@ enum ClipboardContent {
     File { name: String, data: String, mime_type: String },
 }
 
-/// Main function that fetches clipboard content from the server
-/// and writes it to the local OS clipboard
+impl ClipboardContent {
+    /// Get a unique hash of this content for change detection
+    fn content_hash(&self) -> String {
+        match self {
+            ClipboardContent::Text(text) => format!("text:{}", text),
+            ClipboardContent::Image { data, .. } => format!("image:{}", data),
+            ClipboardContent::File { name, data, .. } => format!("file:{}:{}", name, data),
+        }
+    }
+}
+
+/// Command line arguments
+struct Args {
+    poll_interval: Duration,
+    one_shot: bool,
+    verbose: bool,
+}
+
+impl Args {
+    fn from_env() -> Self {
+        let poll_interval = env::var("CLIPSHARE_POLL_INTERVAL")
+            .ok()
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(DEFAULT_POLL_INTERVAL);
+
+        let one_shot = env::var("CLIPSHARE_ONE_SHOT")
+            .ok()
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(false);
+
+        let verbose = env::var("CLIPSHARE_VERBOSE")
+            .ok()
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(false);
+
+        Args {
+            poll_interval: Duration::from_secs(poll_interval),
+            one_shot,
+            verbose,
+        }
+    }
+}
+
+/// Main function that runs the clipboard client
 #[tokio::main]
 async fn main() -> Result<()> {
-    println!("📋 Enhanced Clipboard Client");
+    let args = Args::from_env();
+
+    if args.one_shot {
+        run_one_shot(args).await
+    } else {
+        run_daemon(args).await
+    }
+}
+
+/// One-shot mode: fetch clipboard content once and exit
+async fn run_one_shot(args: Args) -> Result<()> {
+    println!("📋 Clipboard Client (One-Shot Mode)");
     println!("🔗 Connecting to server at: {}", SERVER_URL);
 
-    // Load authentication token from environment variable
-    let auth_token = env::var(TOKEN_ENV_VAR).unwrap_or_else(|_| {
+    let auth_token = load_auth_token()?;
+    let client = create_client()?;
+
+    match fetch_and_process_clipboard(&client, &auth_token, args.verbose).await {
+        Ok(_) => {
+            println!("🎉 Clipboard updated successfully!");
+            Ok(())
+        }
+        Err(e) => {
+            eprintln!("❌ Failed to update clipboard: {}", e);
+            Err(e)
+        }
+    }
+}
+
+/// Daemon mode: continuously monitor server and update clipboard
+async fn run_daemon(args: Args) -> Result<()> {
+    println!("🚀 ClipShare Daemon Starting");
+    println!("📡 Monitoring server at: {}", SERVER_URL);
+    println!("⏱️  Poll interval: {} seconds", args.poll_interval.as_secs());
+    println!("Press Ctrl+C to stop\n");
+
+    let auth_token = load_auth_token()?;
+    let client = create_client()?;
+
+    // Set up graceful shutdown
+    let running = Arc::new(AtomicBool::new(true));
+    let r = running.clone();
+
+    tokio::spawn(async move {
+        tokio::signal::ctrl_c().await.unwrap();
+        println!("\n🛑 Received shutdown signal");
+        r.store(false, Ordering::SeqCst);
+    });
+
+    let mut last_hash = String::new();
+    let mut poller = interval(args.poll_interval);
+    poller.tick().await; // First tick completes immediately
+
+    while running.load(Ordering::SeqCst) {
+        poller.tick().await;
+
+        if !running.load(Ordering::SeqCst) {
+            break;
+        }
+
+        match fetch_clipboard_content(&client, &auth_token).await {
+            Ok(Some(content)) => {
+                let current_hash = content.content_hash();
+
+                if current_hash != last_hash {
+                    if args.verbose {
+                        println!("🔄 New content detected!");
+                    }
+
+                    match process_clipboard_content(content.clone(), args.verbose) {
+                        Ok(_) => {
+                            last_hash = current_hash;
+                            if args.verbose {
+                                println!("✅ Clipboard updated at {}", timestamp());
+                            } else {
+                                println!("✅ {} - Clipboard updated", timestamp());
+                            }
+                        }
+                        Err(e) => {
+                            eprintln!("❌ Failed to process content: {}", e);
+                        }
+                    }
+                } else if args.verbose {
+                    println!("⏸️  No new content");
+                }
+            }
+            Ok(None) => {
+                // No content on server yet
+                if args.verbose {
+                    println!("⏸️  No content available on server");
+                }
+            }
+            Err(e) => {
+                eprintln!("❌ Failed to fetch content: {} (will retry)", e);
+            }
+        }
+    }
+
+    println!("👋 ClipShare Daemon stopped");
+    Ok(())
+}
+
+/// Load authentication token from environment
+fn load_auth_token() -> Result<String> {
+    Ok(env::var(TOKEN_ENV_VAR).unwrap_or_else(|_| {
         eprintln!("⚠️  WARNING: {} environment variable not set!", TOKEN_ENV_VAR);
         eprintln!("📝 To set it up:");
         eprintln!("   1. Generate a token: cargo run --bin clip_token_gen");
@@ -42,51 +188,31 @@ async fn main() -> Result<()> {
         eprintln!();
         eprintln!("❌ Client cannot authenticate without the token.");
         std::process::exit(1);
-    });
+    }))
+}
 
-    println!("🔐 Authentication token loaded successfully");
-
-    // Create an HTTP client with timeout
-    let client = Client::builder()
+/// Create HTTP client with timeout
+fn create_client() -> Result<Client> {
+    Client::builder()
         .timeout(Duration::from_secs(REQUEST_TIMEOUT))
         .build()
-        .context("Failed to create HTTP client")?;
+        .context("Failed to create HTTP client")
+}
 
-    // Fetch clipboard content from the server
-    match fetch_clipboard_content(&client, &auth_token).await {
-        Ok(content) => {
+/// Fetch clipboard content and process it
+async fn fetch_and_process_clipboard(
+    client: &Client,
+    auth_token: &str,
+    verbose: bool,
+) -> Result<()> {
+    match fetch_clipboard_content(client, auth_token).await? {
+        Some(content) => {
             println!("✅ Successfully retrieved clipboard content from server");
-
-            // Write the content to the local clipboard based on type
-            match content {
-                ClipboardContent::Text(text) => {
-                    println!("📄 Content type: Text (length: {} bytes)", text.len());
-                    write_text_to_clipboard(&text)?;
-                }
-                ClipboardContent::Image { data, mime_type } => {
-                    println!("🖼️  Content type: Image ({})", mime_type);
-                    println!("📊 Data size: {} bytes (base64 encoded)", data.len());
-                    write_image_to_clipboard(&data)?;
-                }
-                ClipboardContent::File { name, data, mime_type } => {
-                    println!("📁 Content type: File ({})", mime_type);
-                    println!("📝 Filename: {}", name);
-                    println!("📊 Data size: {} bytes (base64 encoded)", data.len());
-                    write_file_to_clipboard(&name, &data, &mime_type)?;
-                }
-            }
-
-            println!("🎉 Clipboard updated successfully!");
+            process_clipboard_content(content, verbose)?;
             Ok(())
         }
-        Err(e) => {
-            eprintln!("❌ Failed to retrieve clipboard content: {}", e);
-            eprintln!("💡 Troubleshooting tips:");
-            eprintln!("   1. Make sure the server is running at: {}", SERVER_URL);
-            eprintln!("   2. Check if the server has received any content yet");
-            eprintln!("   3. Verify your network connection");
-            eprintln!("   4. Ensure your authentication token matches the server's token");
-            Err(e)
+        None => {
+            anyhow::bail!("No clipboard content available on the server");
         }
     }
 }
@@ -95,7 +221,7 @@ async fn main() -> Result<()> {
 async fn fetch_clipboard_content(
     client: &Client,
     auth_token: &str,
-) -> Result<ClipboardContent> {
+) -> Result<Option<ClipboardContent>> {
     let response = client
         .get(SERVER_URL)
         .header("Authorization", format!("Bearer {}", auth_token))
@@ -109,27 +235,45 @@ async fn fetch_clipboard_content(
         .await
         .context("Failed to read response body")?;
 
-    // Handle different HTTP status codes
     match status.as_u16() {
         200 => {
-            // Parse the JSON response as ClipboardContent
             let content: ClipboardContent = serde_json::from_str(&response_text)
                 .context("Failed to parse clipboard content")?;
-            Ok(content)
+            Ok(Some(content))
         }
-        401 => {
-            anyhow::bail!("Authentication failed - invalid or missing token");
+        404 => Ok(None), // No content available
+        401 => anyhow::bail!("Authentication failed - invalid or missing token"),
+        500 => anyhow::bail!("Internal server error - check server logs"),
+        _ => anyhow::bail!("Unexpected server response: {}", status),
+    }
+}
+
+/// Process clipboard content based on its type
+fn process_clipboard_content(content: ClipboardContent, verbose: bool) -> Result<()> {
+    match content {
+        ClipboardContent::Text(text) => {
+            if verbose {
+                println!("📄 Content type: Text (length: {} bytes)", text.len());
+            }
+            write_text_to_clipboard(&text)?;
         }
-        404 => {
-            anyhow::bail!("No clipboard content available on the server");
+        ClipboardContent::Image { data, mime_type } => {
+            if verbose {
+                println!("🖼️  Content type: Image ({})", mime_type);
+                println!("📊 Data size: {} bytes (base64 encoded)", data.len());
+            }
+            write_image_to_clipboard(&data)?;
         }
-        500 => {
-            anyhow::bail!("Internal server error - check server logs");
-        }
-        _ => {
-            anyhow::bail!("Unexpected server response: {}", status);
+        ClipboardContent::File { name, data, mime_type } => {
+            if verbose {
+                println!("📁 Content type: File ({})", mime_type);
+                println!("📝 Filename: {}", name);
+                println!("📊 Data size: {} bytes (base64 encoded)", data.len());
+            }
+            write_file_to_clipboard(&name, &data, &mime_type)?;
         }
     }
+    Ok(())
 }
 
 /// Writes text content to the system clipboard
@@ -140,38 +284,33 @@ fn write_text_to_clipboard(content: &str) -> Result<()> {
         .set_text(content.to_string())
         .context("Failed to write text to clipboard")?;
 
-    println!("💡 Text content copied to clipboard");
+    if !env::var("CLIPSHARE_VERBOSE").ok().and_then(|s| s.parse().ok()).unwrap_or(false) {
+        println!("💡 Text content ready to paste");
+    }
     Ok(())
 }
 
-/// Writes image content to the system clipboard
+/// Writes image content to a file (clipboard image support varies by platform)
 fn write_image_to_clipboard(base64_data: &str) -> Result<()> {
-    // Decode base64 data
     let image_data = BASE64_STANDARD
         .decode(base64_data)
         .context("Failed to decode base64 image data")?;
 
-    // For now, we'll save the image to a temp file and print the path
-    // since arboard's image handling can be complex
-    let temp_path = format!("clipboard_image_{}.png", chrono_timestamp());
+    let temp_path = format!("clipboard_image_{}.png", timestamp());
     std::fs::write(&temp_path, &image_data)
         .context("Failed to write image to temp file")?;
 
     println!("💡 Image saved to: {}", temp_path);
     println!("💡 Tip: Open the file to view the image");
-    println!("💡 Note: Direct image clipboard support varies by platform");
-
     Ok(())
 }
 
-/// Writes file content to the system clipboard (saves to file)
+/// Writes file content to disk
 fn write_file_to_clipboard(filename: &str, base64_data: &str, _mime_type: &str) -> Result<()> {
-    // Decode base64 data
     let file_data = BASE64_STANDARD
         .decode(base64_data)
         .context("Failed to decode base64 file data")?;
 
-    // Save to file with original filename (sanitized)
     let safe_filename = filename
         .chars()
         .map(|c| if c.is_alphanumeric() || c == '.' || c == '-' || c == '_' { c } else { '_' })
@@ -183,15 +322,20 @@ fn write_file_to_clipboard(filename: &str, base64_data: &str, _mime_type: &str) 
 
     println!("💡 File saved to: {}", temp_path);
     println!("💡 Tip: The file has been saved to your current directory");
-
     Ok(())
 }
 
-/// Generates a simple timestamp for filenames
-fn chrono_timestamp() -> String {
+/// Generate a simple timestamp
+fn timestamp() -> String {
     use std::time::{SystemTime, UNIX_EPOCH};
     let duration = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .unwrap_or_default();
-    format!("{}", duration.as_secs())
+
+    let secs = duration.as_secs();
+    let hours = (secs % 86400) / 3600;
+    let minutes = (secs % 3600) / 60;
+    let seconds = secs % 60;
+
+    format!("{:02}:{:02}:{:02}", hours, minutes, seconds)
 }

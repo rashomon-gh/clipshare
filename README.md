@@ -4,23 +4,27 @@ A local network clipboard sharing service built in Rust. Seamlessly share clipbo
 
 ## 🎯 Overview
 
-ClipShare consists of two components:
+ClipShare consists of three components:
 - **clip_server**: A background REST server that stores clipboard content in memory
-- **clip_client**: A CLI tool that retrieves content from the server and places it on your Windows clipboard
+- **clip_client**: A daemon that continuously monitors the server and automatically updates your system clipboard
+- **clip_token_gen**: Secure token generation tool for authentication
 
-Perfect for integration with iOS Shortcuts to share text between your iPhone/iPad and PC!
+Perfect for integration with iOS Shortcuts to share text, images, and files between your iPhone/iPad and PC!
 
 ## ✨ Features
 
 - 🔄 **Real-time Sharing**: Instant clipboard synchronization across devices
+- 🤖 **Background Daemon**: Automatically monitors server and updates clipboard
 - 🌐 **Network Accessible**: Server accessible from local Wi-Fi network
 - 🔐 **Token Authentication**: Secure Bearer token authentication for all requests
+- 📝 **Multi-Format Support**: Text, images, and files with proper MIME type handling
 - 💾 **In-Memory Storage**: Fast performance with `Arc<RwLock<T>>` state management
 - 🛡️ **Thread-Safe**: Concurrent access handling for multiple requests
 - 📊 **Comprehensive Logging**: Detailed request/response logging with tracing
 - 🎯 **Simple API**: Clean REST endpoints for easy integration
 - 🔧 **Error Handling**: Graceful error handling with helpful messages
 - 🔑 **Token Generator**: Built-in secure token generation tool
+- 🚀 **Cross-Platform**: Runs on Windows, macOS, and Linux as native services
 
 ## 🏗️ Architecture
 
@@ -152,30 +156,57 @@ curl http://localhost:3000/clipboard \
 
 ### 3. Run the Client
 
-Retrieve content and update your Windows clipboard (make sure to set the `CLIPSHARE_TOKEN` environment variable):
+The client supports two modes:
+
+#### One-Shot Mode (Default)
+Retrieve content once and update your clipboard:
 ```bash
 # Set the token first (same as server)
 export CLIPSHARE_TOKEN="your_generated_token"
 
-# Run the client
+# Run once to fetch current clipboard content
 cargo run --bin clip_client
-```
-
-Or use the compiled binary:
-```bash
-./target/release/clip_client.exe
 ```
 
 Expected output:
 ```
-📋 Clipboard Client
+📋 Clipboard Client (One-Shot Mode)
 🔗 Connecting to server at: http://127.0.0.1:3000/clipboard
-🔐 Authentication token loaded successfully
 ✅ Successfully retrieved clipboard content from server
-📄 Content length: 16 bytes
 🎉 Clipboard updated successfully!
-💡 Your clipboard now contains the content from the server
 ```
+
+#### Daemon Mode (Continuous Monitoring)
+Automatically monitor the server and update your clipboard when new content is pushed:
+```bash
+# Set polling interval (optional, defaults to 2 seconds)
+export CLIPSHARE_POLL_INTERVAL=2
+
+# Run as daemon - will continuously monitor server
+cargo run --bin clip_client
+```
+
+Expected output:
+```
+🚀 ClipShare Daemon Starting
+📡 Monitoring server at: http://127.0.0.1:3000/clipboard
+⏱️  Poll interval: 2 seconds
+Press Ctrl+C to stop
+
+✅ 12:34:56 - Clipboard updated
+```
+
+Press `Ctrl+C` to stop the daemon.
+
+#### Install as System Service
+
+For automatic startup and background operation, install the client as a system service:
+
+- **Linux (systemd)**: See [services/README.md](services/README.md#linux-systemd)
+- **macOS (LaunchDaemon)**: See [services/README.md](services/README.md#macos-launchdaemon)
+- **Windows (Service)**: See [services/README.md](services/README.md#windows)
+
+📖 **[Complete Service Setup Guide →](services/README.md)**
 
 ## 📱 iOS Shortcuts Integration
 

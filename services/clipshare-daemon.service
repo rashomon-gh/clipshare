@@ -1,0 +1,32 @@
+[Unit]
+Description=ClipShare Clipboard Daemon
+Documentation=https://github.com/yourusername/clipshare
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=%i
+Environment="CLIPSHARE_TOKEN=your_token_here"
+Environment="CLIPSHARE_POLL_INTERVAL=2"
+Environment="CLIPSHARE_VERBOSE=false"
+ExecStart=/path/to/clip_client
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=clipshare-daemon
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/tmp
+
+# Resource limits
+MemoryMax=64M
+CPUQuota=10%
+
+[Install]
+WantedBy=multi-user.target
