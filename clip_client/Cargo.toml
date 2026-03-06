@@ -1,0 +1,17 @@
+[package]
+name = "clip_client"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+# HTTP client for making requests to the server
+reqwest = { version = "0.11", features = ["json"] }
+# Cross-platform clipboard library
+arboard = "3.2"
+# Async runtime
+tokio = { version = "1.35", features = ["full"] }
+# Error handling
+anyhow = "1.0"
+# Serialization/deserialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"

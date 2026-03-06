@@ -1,6 +1,9 @@
-[package]
-name = "clipshare"
-version = "0.1.0"
-edition = "2024"
+[workspace]
+members = ["clip_server", "clip_client"]
+resolver = "2"
 
-[dependencies]
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+authors = ["Your Name <your.email@example.com>"]
