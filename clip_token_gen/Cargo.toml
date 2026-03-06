@@ -1,0 +1,10 @@
+[package]
+name = "clip_token_gen"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+# Cryptographically secure random number generation
+rand = "0.8"
+# Encoding for token representation
+base64 = "0.21"

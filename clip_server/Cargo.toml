@@ -18,3 +18,5 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 # HTTP types and utilities
 http-body-util = "0.1"
+# Environment variable handling
+dotenvy = "0.15"

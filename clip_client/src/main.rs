@@ -2,11 +2,13 @@ use anyhow::{Context, Result};
 use arboard::Clipboard;
 use reqwest::Client;
 use serde::Deserialize;
+use std::env;
 use std::time::Duration;
 
 /// Configuration for the clipboard client
 const SERVER_URL: &str = "http://127.0.0.1:3000/clipboard";
 const REQUEST_TIMEOUT: u64 = 5; // seconds
+const TOKEN_ENV_VAR: &str = "CLIPSHARE_TOKEN";
 
 /// Response structure for parsing the clipboard content from the server
 #[derive(Debug, Deserialize)]
@@ -21,6 +23,20 @@ async fn main() -> Result<()> {
     println!("📋 Clipboard Client");
     println!("🔗 Connecting to server at: {}", SERVER_URL);
 
+    // Load authentication token from environment variable
+    let auth_token = env::var(TOKEN_ENV_VAR).unwrap_or_else(|_| {
+        eprintln!("⚠️  WARNING: {} environment variable not set!", TOKEN_ENV_VAR);
+        eprintln!("📝 To set it up:");
+        eprintln!("   1. Generate a token: cargo run --bin clip_token_gen");
+        eprintln!("   2. Set the environment variable:");
+        eprintln!("      export {}=\"your_generated_token\"", TOKEN_ENV_VAR);
+        eprintln!();
+        eprintln!("❌ Client cannot authenticate without the token.");
+        std::process::exit(1);
+    });
+
+    println!("🔐 Authentication token loaded successfully");
+
     // Create an HTTP client with timeout
     let client = Client::builder()
         .timeout(Duration::from_secs(REQUEST_TIMEOUT))
@@ -28,7 +44,7 @@ async fn main() -> Result<()> {
         .context("Failed to create HTTP client")?;
 
     // Fetch clipboard content from the server
-    match fetch_clipboard_content(&client).await {
+    match fetch_clipboard_content(&client, &auth_token).await {
         Ok(content) => {
             println!("✅ Successfully retrieved clipboard content from server");
             println!("📄 Content length: {} bytes", content.len());
@@ -53,15 +69,17 @@ async fn main() -> Result<()> {
             eprintln!("   1. Make sure the server is running at: {}", SERVER_URL);
             eprintln!("   2. Check if the server has received any content yet");
             eprintln!("   3. Verify your network connection");
+            eprintln!("   4. Ensure your authentication token matches the server's token");
             Err(e)
         }
     }
 }
 
-/// Fetches clipboard content from the server
-async fn fetch_clipboard_content(client: &Client) -> Result<String> {
+/// Fetches clipboard content from the server with authentication
+async fn fetch_clipboard_content(client: &Client, auth_token: &str) -> Result<String> {
     let response = client
         .get(SERVER_URL)
+        .header("Authorization", format!("Bearer {}", auth_token))
         .send()
         .await
         .context("Failed to connect to server")?;
@@ -82,6 +100,9 @@ async fn fetch_clipboard_content(client: &Client) -> Result<String> {
                 // If not JSON, use the response text directly
                 Ok(response_text)
             }
+        }
+        401 => {
+            anyhow::bail!("Authentication failed - invalid or missing token");
         }
         404 => {
             anyhow::bail!("No clipboard content available on the server");

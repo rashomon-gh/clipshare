@@ -1,5 +1,5 @@
 [workspace]
-members = ["clip_server", "clip_client"]
+members = ["clip_server", "clip_client", "clip_token_gen"]
 resolver = "2"
 
 [workspace.package]
