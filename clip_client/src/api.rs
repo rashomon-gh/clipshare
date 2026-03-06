@@ -1,7 +1,7 @@
 //! API communication with the clipboard server
 
+use super::config::{REQUEST_TIMEOUT, SERVER_URL, TOKEN_ENV_VAR};
 use super::models::ClipboardContent;
-use super::config::{SERVER_URL, REQUEST_TIMEOUT, TOKEN_ENV_VAR};
 use anyhow::{Context, Result};
 use reqwest::Client;
 use std::env;
@@ -18,7 +18,10 @@ pub fn create_client() -> Result<Client> {
 /// Load authentication token from environment
 pub fn load_auth_token() -> Result<String> {
     Ok(env::var(TOKEN_ENV_VAR).unwrap_or_else(|_| {
-        eprintln!("⚠️  WARNING: {} environment variable not set!", TOKEN_ENV_VAR);
+        eprintln!(
+            "⚠️  WARNING: {} environment variable not set!",
+            TOKEN_ENV_VAR
+        );
         eprintln!("📝 To set it up:");
         eprintln!("   1. Generate a token: cargo run --bin clip_token_gen");
         eprintln!("   2. Set the environment variable:");
@@ -30,7 +33,10 @@ pub fn load_auth_token() -> Result<String> {
 }
 
 /// Fetches clipboard content from the server with authentication
-pub async fn fetch_clipboard_content(client: &Client, auth_token: &str) -> Result<Option<ClipboardContent>> {
+pub async fn fetch_clipboard_content(
+    client: &Client,
+    auth_token: &str,
+) -> Result<Option<ClipboardContent>> {
     let response = client
         .get(SERVER_URL)
         .header("Authorization", format!("Bearer {}", auth_token))

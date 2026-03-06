@@ -1,6 +1,10 @@
 //! Data models and types for the clipboard server
 
-use axum::{http::StatusCode, response::{IntoResponse, Response}, Json};
+use axum::{
+    http::StatusCode,
+    response::{IntoResponse, Response},
+    Json,
+};
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
@@ -11,9 +15,18 @@ pub enum ClipboardContent {
     #[serde(rename = "text")]
     Text { data: String },
     #[serde(rename = "image")]
-    Image { data: String, #[serde(rename = "mimeType")] mime_type: String },
+    Image {
+        data: String,
+        #[serde(rename = "mimeType")]
+        mime_type: String,
+    },
     #[serde(rename = "file")]
-    File { name: String, data: String, #[serde(rename = "mimeType")] mime_type: String },
+    File {
+        name: String,
+        data: String,
+        #[serde(rename = "mimeType")]
+        mime_type: String,
+    },
 }
 
 impl ClipboardContent {
@@ -51,7 +64,9 @@ impl fmt::Display for ClipboardContent {
         match self {
             ClipboardContent::Text { data } => write!(f, "Text ({} bytes)", data.len()),
             ClipboardContent::Image { mime_type, .. } => write!(f, "Image ({})", mime_type),
-            ClipboardContent::File { name, mime_type, .. } => write!(f, "File {} ({})", name, mime_type),
+            ClipboardContent::File {
+                name, mime_type, ..
+            } => write!(f, "File {} ({})", name, mime_type),
         }
     }
 }
@@ -120,7 +135,10 @@ impl std::error::Error for AppError {}
 impl IntoResponse for AppError {
     fn into_response(self) -> Response {
         let (status, message) = match self {
-            AppError::NoContent => (StatusCode::NOT_FOUND, "No clipboard content available".to_string()),
+            AppError::NoContent => (
+                StatusCode::NOT_FOUND,
+                "No clipboard content available".to_string(),
+            ),
             AppError::InternalServerError(msg) => (StatusCode::INTERNAL_SERVER_ERROR, msg),
         };
 
@@ -135,7 +153,9 @@ mod tests {
 
     #[test]
     fn test_clipboard_content_mime_type() {
-        let text = ClipboardContent::Text { data: "hello".to_string() };
+        let text = ClipboardContent::Text {
+            data: "hello".to_string(),
+        };
         assert_eq!(text.mime_type(), "text/plain");
 
         let image = ClipboardContent::Image {
@@ -147,7 +167,9 @@ mod tests {
 
     #[test]
     fn test_clipboard_content_size() {
-        let text = ClipboardContent::Text { data: "hello".to_string() };
+        let text = ClipboardContent::Text {
+            data: "hello".to_string(),
+        };
         assert_eq!(text.size_bytes(), 5);
 
         let image = ClipboardContent::Image {
@@ -159,9 +181,15 @@ mod tests {
 
     #[test]
     fn test_clipboard_content_hash() {
-        let text1 = ClipboardContent::Text { data: "hello".to_string() };
-        let text2 = ClipboardContent::Text { data: "hello".to_string() };
-        let text3 = ClipboardContent::Text { data: "world".to_string() };
+        let text1 = ClipboardContent::Text {
+            data: "hello".to_string(),
+        };
+        let text2 = ClipboardContent::Text {
+            data: "hello".to_string(),
+        };
+        let text3 = ClipboardContent::Text {
+            data: "world".to_string(),
+        };
 
         assert_eq!(text1.content_hash(), text2.content_hash());
         assert_ne!(text1.content_hash(), text3.content_hash());

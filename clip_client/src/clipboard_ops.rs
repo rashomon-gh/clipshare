@@ -23,8 +23,7 @@ pub fn write_image_to_clipboard(base64_data: &str) -> Result<String> {
         .context("Failed to decode base64 image data")?;
 
     let temp_path = format!("clipboard_image_{}.png", timestamp());
-    std::fs::write(&temp_path, &image_data)
-        .context("Failed to write image to temp file")?;
+    std::fs::write(&temp_path, &image_data).context("Failed to write image to temp file")?;
 
     Ok(temp_path)
 }
@@ -37,12 +36,17 @@ pub fn write_file_to_clipboard(filename: &str, base64_data: &str) -> Result<Stri
 
     let safe_filename = filename
         .chars()
-        .map(|c| if c.is_alphanumeric() || c == '.' || c == '-' || c == '_' { c } else { '_' })
+        .map(|c| {
+            if c.is_alphanumeric() || c == '.' || c == '-' || c == '_' {
+                c
+            } else {
+                '_'
+            }
+        })
         .collect::<String>();
 
     let temp_path = format!("clipboard_file_{}", safe_filename);
-    std::fs::write(&temp_path, &file_data)
-        .context("Failed to write file data")?;
+    std::fs::write(&temp_path, &file_data).context("Failed to write file data")?;
 
     Ok(temp_path)
 }
@@ -70,7 +74,11 @@ pub fn process_clipboard_content(content: ClipboardContent, verbose: bool) -> Re
                 println!("💡 Tip: Open the file to view the image");
             }
         }
-        ClipboardContent::File { name, data, mime_type } => {
+        ClipboardContent::File {
+            name,
+            data,
+            mime_type,
+        } => {
             if verbose {
                 println!("📁 Content type: File ({})", mime_type);
                 println!("📝 Filename: {}", name);
@@ -110,7 +118,13 @@ mod tests {
         let filename = "test/file@name#.pdf";
         let safe: String = filename
             .chars()
-            .map(|c| if c.is_alphanumeric() || c == '.' || c == '-' || c == '_' { c } else { '_' })
+            .map(|c| {
+                if c.is_alphanumeric() || c == '.' || c == '-' || c == '_' {
+                    c
+                } else {
+                    '_'
+                }
+            })
             .collect();
         assert_eq!(safe, "test_file_name_.pdf");
     }

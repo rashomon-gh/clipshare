@@ -117,11 +117,7 @@ async fn e2e_authentication_required() {
     let client = reqwest::Client::new();
 
     // Test without authentication - should fail
-    let response = client
-        .get(env.server_url())
-        .send()
-        .await
-        .unwrap();
+    let response = client.get(env.server_url()).send().await.unwrap();
 
     assert_eq!(response.status(), 401);
 

@@ -10,7 +10,10 @@ use tokio::time::interval;
 pub async fn run_daemon(args: Args) -> Result<()> {
     println!("🚀 ClipShare Daemon Starting");
     println!("📡 Monitoring server at: http://127.0.0.1:3000/clipboard");
-    println!("⏱️  Poll interval: {} seconds", args.poll_interval.as_secs());
+    println!(
+        "⏱️  Poll interval: {} seconds",
+        args.poll_interval.as_secs()
+    );
     println!("Press Ctrl+C to stop\n");
 
     let auth_token = crate::api::load_auth_token()?;

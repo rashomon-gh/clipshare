@@ -9,4 +9,4 @@ pub mod models;
 // Re-export commonly used types
 pub use auth::{AuthState, TOKEN_ENV_VAR};
 pub use handlers::ClipboardState;
-pub use models::{ClipboardContent, ClipboardRequest, ErrorResponse, SuccessResponse, AppError};
+pub use models::{AppError, ClipboardContent, ClipboardRequest, ErrorResponse, SuccessResponse};

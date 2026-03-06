@@ -9,9 +9,18 @@ pub enum ClipboardContent {
     #[serde(rename = "text")]
     Text { data: String },
     #[serde(rename = "image")]
-    Image { data: String, #[serde(rename = "mimeType")] mime_type: String },
+    Image {
+        data: String,
+        #[serde(rename = "mimeType")]
+        mime_type: String,
+    },
     #[serde(rename = "file")]
-    File { name: String, data: String, #[serde(rename = "mimeType")] mime_type: String },
+    File {
+        name: String,
+        data: String,
+        #[serde(rename = "mimeType")]
+        mime_type: String,
+    },
 }
 
 impl ClipboardContent {
@@ -51,9 +60,15 @@ mod tests {
 
     #[test]
     fn test_clipboard_content_hash() {
-        let text1 = ClipboardContent::Text { data: "hello".to_string() };
-        let text2 = ClipboardContent::Text { data: "hello".to_string() };
-        let text3 = ClipboardContent::Text { data: "world".to_string() };
+        let text1 = ClipboardContent::Text {
+            data: "hello".to_string(),
+        };
+        let text2 = ClipboardContent::Text {
+            data: "hello".to_string(),
+        };
+        let text3 = ClipboardContent::Text {
+            data: "world".to_string(),
+        };
 
         assert_eq!(text1.content_hash(), text2.content_hash());
         assert_ne!(text1.content_hash(), text3.content_hash());
@@ -61,13 +76,17 @@ mod tests {
 
     #[test]
     fn test_clipboard_content_data_length() {
-        let text = ClipboardContent::Text { data: "hello world".to_string() };
+        let text = ClipboardContent::Text {
+            data: "hello world".to_string(),
+        };
         assert_eq!(text.data_length(), 11);
     }
 
     #[test]
     fn test_clipboard_content_mime_type() {
-        let text = ClipboardContent::Text { data: "test".to_string() };
+        let text = ClipboardContent::Text {
+            data: "test".to_string(),
+        };
         assert_eq!(text.mime_type(), "text/plain");
 
         let image = ClipboardContent::Image {

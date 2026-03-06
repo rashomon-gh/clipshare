@@ -4,7 +4,7 @@ mod handlers;
 mod models;
 
 use auth::{load_auth_token, AuthState, TOKEN_ENV_VAR};
-use config::{DEFAULT_SERVER_ADDRESS, DEFAULT_LOG_FILTER, DEFAULT_SERVER_PORT};
+use config::{DEFAULT_LOG_FILTER, DEFAULT_SERVER_ADDRESS, DEFAULT_SERVER_PORT};
 use handlers::{create_router, ClipboardState};
 use std::net::SocketAddr;
 use std::sync::Arc;
@@ -32,7 +32,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         eprintln!("      export {}=\"your_generated_token\"", TOKEN_ENV_VAR);
         eprintln!();
         eprintln!("❌ Server cannot start without authentication token.");
-        eprintln!("💡 For testing purposes, you can use: export {}=\"test-token-123\"", TOKEN_ENV_VAR);
+        eprintln!(
+            "💡 For testing purposes, you can use: export {}=\"test-token-123\"",
+            TOKEN_ENV_VAR
+        );
         std::process::exit(1);
     });
 
@@ -54,7 +57,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let addr = SocketAddr::from(([0, 0, 0, 0], config::DEFAULT_SERVER_PORT));
     let listener = TcpListener::bind(addr).await?;
 
-    info!("🚀 Clipboard Server starting on http://{}:{}", DEFAULT_SERVER_ADDRESS, DEFAULT_SERVER_PORT);
+    info!(
+        "🚀 Clipboard Server starting on http://{}:{}",
+        DEFAULT_SERVER_ADDRESS, DEFAULT_SERVER_PORT
+    );
     info!("📡 Server is accessible from your local Wi-Fi network");
     info!("🔒 Authentication is enabled - all requests require a valid Bearer token");
     info!("📝 Supporting content types: text, images, files");

@@ -23,7 +23,9 @@ fn main() {
     println!("   export CLIPSHARE_TOKEN=\"{}\"", token);
     println!("   # Or on Windows PowerShell:");
     println!("   $env:CLIPSHARE_TOKEN=\"{}\"", token);
-    println!("\n3. For persistent configuration, add to your shell profile (~/.bashrc, ~/.zshrc, etc.)");
+    println!(
+        "\n3. For persistent configuration, add to your shell profile (~/.bashrc, ~/.zshrc, etc.)"
+    );
 
     println!("\n⚠️  Security notes:");
     println!("   - Keep this token secret and secure");
@@ -61,7 +63,9 @@ mod tests {
         assert!(!token2.is_empty());
 
         // Tokens should be base64 encoded (only contain valid characters)
-        assert!(token1.chars().all(|c| c.is_alphanumeric() || c == '+' || c == '/' || c == '='));
+        assert!(token1
+            .chars()
+            .all(|c| c.is_alphanumeric() || c == '+' || c == '/' || c == '='));
     }
 
     #[test]

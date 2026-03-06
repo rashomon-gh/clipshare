@@ -1,11 +1,7 @@
 //! HTTP request handlers for the clipboard API
 
 use super::models::{AppError, ClipboardContent, ClipboardRequest, SuccessResponse};
-use axum::{
-    extract::State,
-    routing,
-    Json, Router,
-};
+use axum::{extract::State, routing, Json, Router};
 use std::sync::{Arc, RwLock};
 use tracing::{info, warn};
 
@@ -27,7 +23,9 @@ pub async fn set_clipboard(
     );
 
     let content = if payload.content_type.starts_with("text/") {
-        ClipboardContent::Text { data: payload.data.clone() }
+        ClipboardContent::Text {
+            data: payload.data.clone(),
+        }
     } else if payload.content_type.starts_with("image/") {
         ClipboardContent::Image {
             data: payload.data.clone(),
@@ -59,11 +57,15 @@ pub async fn set_clipboard(
         Ok(mut guard) => {
             *guard = Some(content);
             info!("Clipboard content updated successfully");
-            Ok(Json(SuccessResponse::new("Clipboard content updated successfully")))
+            Ok(Json(SuccessResponse::new(
+                "Clipboard content updated successfully",
+            )))
         }
         Err(e) => {
             warn!("Failed to acquire write lock: {}", e);
-            Err(AppError::InternalServerError("Failed to update clipboard content".to_string()))
+            Err(AppError::InternalServerError(
+                "Failed to update clipboard content".to_string(),
+            ))
         }
     }
 }
@@ -90,7 +92,9 @@ pub async fn get_clipboard(
         }
         Err(e) => {
             warn!("Failed to acquire read lock: {}", e);
-            Err(AppError::InternalServerError("Failed to retrieve clipboard content".to_string()))
+            Err(AppError::InternalServerError(
+                "Failed to retrieve clipboard content".to_string(),
+            ))
         }
     }
 }
@@ -119,7 +123,9 @@ mod tests {
         // Test writing text content
         {
             let mut guard = state.write().unwrap();
-            *guard = Some(ClipboardContent::Text { data: "test content".to_string() });
+            *guard = Some(ClipboardContent::Text {
+                data: "test content".to_string(),
+            });
         }
 
         // Test reading content
