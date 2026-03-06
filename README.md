@@ -143,11 +143,17 @@ The server will start on `http://0.0.0.0:3000` and log:
 
 Send clipboard content via curl with authentication:
 ```bash
-# Store clipboard content
+# Store text content
 curl -X POST http://localhost:3000/clipboard \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer your_generated_token" \
-  -d '{"content": "Hello from iOS!"}'
+  -d '{"contentType": "text/plain", "data": "Hello from iOS!"}'
+
+# Store image content (base64 encoded)
+curl -X POST http://localhost:3000/clipboard \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer your_generated_token" \
+  -d '{"contentType": "image/png", "data": "iVBORw0KG..."}'
 
 # Retrieve clipboard content
 curl http://localhost:3000/clipboard \
@@ -215,7 +221,9 @@ Create an iOS Shortcut to send clipboard content to your PC:
 ### Shortcut Configuration
 
 1. **Action**: Get Clipboard from iOS
-2. **Action**: HTTP Request
+2. **Action**: Detect Content Type (text, image, or file)
+3. **Action**: Convert to Base64 (for images/files)
+4. **Action**: HTTP Request
    - **URL**: `http://YOUR_PC_IP:3000/clipboard`
    - **Method**: POST
    - **Headers**:
@@ -224,9 +232,18 @@ Create an iOS Shortcut to send clipboard content to your PC:
    - **Body**:
    ```json
    {
-     "content": "[Your Clipboard Content]"
+     "contentType": "text/plain",
+     "data": "[Your Clipboard Content or Base64 Data]"
    }
    ```
+
+For images and files:
+```json
+{
+  "contentType": "image/png",
+  "data": "[Base64 encoded image data]"
+}
+```
 
 ### Important Security Note
 
@@ -245,16 +262,42 @@ Look for "IPv4 Address" under your network adapter (usually `192.168.x.x` or `10
 
 ### POST /clipboard
 
-Store clipboard content on the server.
+Store clipboard content on the server. Supports text, images, and files.
 
-**Request:**
+**Request (Text):**
 ```http
 POST /clipboard HTTP/1.1
 Content-Type: application/json
 Authorization: Bearer your_generated_token
 
 {
-  "content": "Your clipboard text here"
+  "contentType": "text/plain",
+  "data": "Your clipboard text here"
+}
+```
+
+**Request (Image - Base64 Encoded):**
+```http
+POST /clipboard HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer your_generated_token
+
+{
+  "contentType": "image/png",
+  "data": "iVBORw0KGgoAAAANSUhEUgAAAAUA..."
+}
+```
+
+**Request (File - Base64 Encoded):**
+```http
+POST /clipboard HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer your_generated_token
+
+{
+  "contentType": "application/pdf",
+  "filename": "document.pdf",
+  "data": "JVBERi0xLjQKJe..."
 }
 ```
 
@@ -301,12 +344,40 @@ GET /clipboard HTTP/1.1
 Authorization: Bearer your_generated_token
 ```
 
-**Response (Success):**
+**Response (Success - Text):**
 ```http
 HTTP/1.1 200 OK
 Content-Type: application/json
 
-"Your clipboard text here"
+{
+  "type": "text",
+  "data": "Your clipboard text here"
+}
+```
+
+**Response (Success - Image):**
+```http
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "type": "image",
+  "data": "base64_encoded_image_data",
+  "mimeType": "image/png"
+}
+```
+
+**Response (Success - File):**
+```http
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "type": "file",
+  "name": "document.pdf",
+  "data": "base64_encoded_file_data",
+  "mimeType": "application/pdf"
+}
 ```
 
 **Response (No Content):**
