@@ -1,5 +1,8 @@
 # ClipShare
 
+[![Tests](https://github.com/rashomon-gh/clipshare/workflows/Tests/badge.svg)](https://github.com/rashomon-gh/clipshare/actions/workflows/test.yml)
+
+
 A local network clipboard sharing service built in Rust. Seamlessly share clipboard content between your iOS devices and PC/Mac via REST API.
 
 ## 🎯 Overview
@@ -95,24 +98,9 @@ export CLIPSHARE_TOKEN="your_generated_token_here"
 $env:CLIPSHARE_TOKEN="your_generated_token_here"
 ```
 
-### Security Best Practices
-
-- 🔒 Keep your authentication token secret and secure
-- 🚫 Never share tokens publicly or commit them to version control
-- 🔄 Generate a new token if you suspect it has been compromised
-- 🌐 Use different tokens for different environments (dev/prod)
-- 📱 Ensure your iOS Shortcuts include the token in requests
-
 ## 🚀 Getting Started
 
 ### Prerequisites
-
-- Rust 1.70+ installed
-- One of the following operating systems:
-  - **Windows 10+** (for client)
-  - **macOS 10.13+** (for client)
-  - **Linux** with Wayland or X11 (for client)
-- Local Wi-Fi network for device communication
 
 **Platform-specific notes:**
 
@@ -237,35 +225,6 @@ For automatic startup and background operation, install the client as a system s
 - **Windows (Service)**: See [services/README.md](services/README.md#windows)
 
 📖 **[Complete Service Setup Guide →](services/README.md)**
-
-### Cross-Platform Clipboard Support
-
-The ClipShare client supports clipboard operations on all major platforms:
-
-**Windows:**
-- ✅ Text clipboard (copy/paste)
-- ✅ Image clipboard (PNG images copied directly to clipboard)
-- ✅ File saving (images and files saved to disk)
-- No additional setup required
-
-**macOS:**
-- ✅ Text clipboard (copy/paste)
-- ✅ Image clipboard (PNG images copied directly to clipboard)
-- ✅ File saving (images and files saved to disk)
-- Grant clipboard permissions when prompted
-
-**Linux:**
-- ✅ Text clipboard (copy/paste) on both X11 and Wayland
-- ✅ Image clipboard (PNG images copied directly to clipboard)
-- ✅ File saving (images and files saved to disk)
-- Supported Wayland compositors: GNOME, KDE Plasma, Sway, and others
-- Supported X11 environments: All standard desktop environments
-
-**Image Handling:**
-- The client attempts to copy PNG images directly to the clipboard
-- If clipboard image copy fails (e.g., unsupported format or permissions), the image is automatically saved to a file instead
-- Supported image format: PNG (base64 encoded)
-- Images are decoded and converted to RGBA format for cross-platform compatibility
 
 ## 📱 iOS Shortcuts Integration
 
@@ -477,53 +436,6 @@ const REQUEST_TIMEOUT: u64 = 5;  // seconds
 const TOKEN_ENV_VAR: &str = "CLIPSHARE_TOKEN";  // Environment variable for auth token
 ```
 
-## 🔧 Troubleshooting
-
-### Server Issues
-
-**Server won't start:**
-- Check if port 3000 is already in use
-- Ensure firewall allows connections on port 3000
-- Verify no other instances are running
-
-**Can't access server from other devices:**
-- Ensure server is running on 0.0.0.0 (not 127.0.0.1)
-- Check firewall settings:
-  - **Windows**: Windows Firewall settings
-  - **macOS**: System Preferences → Security & Privacy → Firewall
-  - **Linux**: `ufw` or `firewalld` settings
-- Verify devices are on the same Wi-Fi network
-- Confirm correct IP address in iOS Shortcut
-- Verify authentication token matches between server and client
-
-**Authentication errors (401 Unauthorized):**
-- Ensure `CLIPSHARE_TOKEN` environment variable is set on both server and client
-- Verify the token matches exactly between server and client
-- Check that Authorization header includes "Bearer " prefix in requests
-- Make sure iOS Shortcut includes the token in the Authorization header
-
-### Client Issues
-
-**"Failed to connect to server":**
-- Ensure server is running
-- Verify server URL is correct
-- Check network connectivity
-
-**"Failed to write to clipboard":**
-- **All platforms**: Close other applications using the clipboard
-- **Windows**: Run client with elevated permissions if needed
-- **macOS**: Grant clipboard permissions in System Preferences
-- **Linux (Wayland)**: Ensure your compositor supports clipboard operations
-- **Linux (X11)**: Install `xclip` or `xsel` package if needed
-
-**"Authentication failed - invalid or missing token":**
-- Ensure `CLIPSHARE_TOKEN` environment variable is set
-- Verify the token matches the server's token exactly
-- Check for typos in the environment variable name or value
-
-**"No clipboard content available":**
-- Server has received no content yet
-- Send content via iOS Shortcut or curl first
 
 ## 🛠️ Development
 
@@ -606,61 +518,6 @@ cargo test --all -- --nocapture
 cargo test --all --jobs 4
 ```
 
-**Test Coverage:**
-- ✅ Authentication middleware (token validation)
-- ✅ Content type handling (text, images, files)
-- ✅ Concurrent access with `Arc<RwLock<T>>`
-- ✅ Error handling and edge cases
-- ✅ End-to-end workflows
-- ✅ Integration between server and client
-- ✅ Change detection in daemon mode
-- ✅ Graceful shutdown handling
-
-### Code Quality
-
-The project maintains high code quality standards:
-
-```bash
-# Run linter with strict checks (no warnings allowed)
-cargo clippy --all-targets --all-features -- -D warnings
-
-# Format code
-cargo fmt --all
-
-# Check formatting without modifying
-cargo fmt --all -- --check
-```
-
-**Quality Standards:**
-- ✅ Zero clippy warnings (strict mode)
-- ✅ Consistent code formatting
-- ✅ Comprehensive error handling
-- ✅ Thread-safe concurrent operations
-- ✅ Memory-efficient with proper cleanup
-
-### Dependencies
-
-**Server:**
-- `axum` - Web framework
-- `tokio` - Async runtime with full features
-- `serde/serde_json` - Serialization
-- `tracing/tracing-subscriber` - Structured logging
-- `arc-swap` - Lock-free atomic updates
-- `base64` - Binary data encoding
-
-**Client:**
-- `reqwest` - HTTP client with JSON support
-- `arboard` - Cross-platform clipboard operations
-- `anyhow` - Error handling
-- `tokio` - Async runtime
-
-**Token Generator:**
-- `rand` - Cryptographically secure random number generation
-- `base64` - Token encoding
-
-**Development Dependencies:**
-- `tokio-test` - Async test utilities
-- `serial_test` - Serial test execution
 
 ### Building
 
@@ -681,41 +538,6 @@ cargo check
 cargo clippy --all-targets --all-features -- -D warnings
 ```
 
-### CI/CD
-
-The project uses GitHub Actions for continuous integration:
-
-**Test Matrix:**
-- ✅ Ubuntu, macOS, and Windows
-- ✅ Stable Rust toolchain
-- ✅ Automated testing on every push/PR
-- ✅ Clippy checks with strict warnings
-- ✅ Code formatting verification
-
-**Workflow Features:**
-- Parallel test execution across platforms
-- Cargo caching for faster builds
-- Automated code quality checks
-
-## 📝 Notes
-
-- **Data Persistence**: Clipboard content is stored in memory only - lost on server restart
-- **Security**: Token-based authentication required for all API requests
-- **Performance**: Single clipboard item stored - new content overwrites existing
-- **Platform**: Client tested on Windows; server works on any platform
-- **Token Management**: Generate new tokens using `clip_token_gen` binary
-- **Environment**: Requires `CLIPSHARE_TOKEN` environment variable on both server and client
-- **Testing**: 44 tests providing comprehensive coverage of all functionality
-- **Quality**: Zero clippy warnings with strict linting standards
-
-## 🧪 Testing Status
-
-[![Tests](https://github.com/rashomon-gh/clipshare/workflows/Tests/badge.svg)](https://github.com/rashomon-gh/clipshare/actions/workflows/test.yml)
-
-- **44 Tests** passing across unit and integration suites
-- **3 Platforms** tested: Linux, macOS, Windows
-- **5 E2E tests** covering complete workflows
-- **Zero warnings** in strict clippy mode
 
 ## 📄 License
 
