@@ -101,7 +101,7 @@ $env:CLIPSHARE_TOKEN="your_generated_token_here"
 
 1. Clone the repository:
 ```bash
-git clone <your-repo-url>
+git clone https://codeberg.org/rashomon/clipshare.git
 cd clipshare
 ```
 
@@ -111,8 +111,8 @@ cargo build --release
 ```
 
 This creates two binaries:
-- `target/release/clip_server.exe`
-- `target/release/clip_client.exe`
+- `target/release/clip_server`
+- `target/release/clip_client`
 
 ## 📖 Usage
 
@@ -530,17 +530,6 @@ cargo check
 - **Token Management**: Generate new tokens using `clip_token_gen` binary
 - **Environment**: Requires `CLIPSHARE_TOKEN` environment variable on both server and client
 
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## 📄 License
-
-MIT License - feel free to use this project for personal or commercial purposes.
-
-## 🙏 Acknowledgments
-
-Built with:
-- [Axum](https://github.com/tokio-rs/axum) - Web framework
-- [Tokio](https://tokio.rs/) - Async runtime
-- [Arboard](https://github.com/1Password/arboard) - Clipboard operations
+AGPL-3.0
