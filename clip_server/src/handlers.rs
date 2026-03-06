@@ -27,7 +27,7 @@ pub async fn set_clipboard(
     );
 
     let content = if payload.content_type.starts_with("text/") {
-        ClipboardContent::Text(payload.data.clone())
+        ClipboardContent::Text { data: payload.data.clone() }
     } else if payload.content_type.starts_with("image/") {
         ClipboardContent::Image {
             data: payload.data.clone(),
@@ -119,7 +119,7 @@ mod tests {
         // Test writing text content
         {
             let mut guard = state.write().unwrap();
-            *guard = Some(ClipboardContent::Text("test content".to_string()));
+            *guard = Some(ClipboardContent::Text { data: "test content".to_string() });
         }
 
         // Test reading content

@@ -1,6 +1,8 @@
 //! End-to-end tests for the complete ClipShare system
 //! Tests the integration between server and client
 
+#![allow(dead_code)]
+
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
@@ -15,9 +17,7 @@ struct ClipShareTestEnvironment {
 
 impl ClipShareTestEnvironment {
     async fn start() -> Self {
-        use axum::{Router, routing::{get, post}};
         use clip_server::{auth::auth_middleware, handlers::create_router, ClipboardState};
-        use clip_server::models::ClipboardContent;
         use std::net::SocketAddr;
         use std::sync::RwLock;
         use tokio::net::TcpListener;
@@ -82,7 +82,7 @@ async fn e2e_text_content_workflow() {
 
     // 1. Client uploads text content to server
     let upload_response = client
-        .post(&env.server_url())
+        .post(env.server_url())
         .header("Authorization", format!("Bearer {}", env.server_token))
         .json(&serde_json::json!({
             "contentType": "text/plain",
@@ -96,7 +96,7 @@ async fn e2e_text_content_workflow() {
 
     // 2. Client retrieves text content from server
     let download_response = client
-        .get(&env.server_url())
+        .get(env.server_url())
         .header("Authorization", format!("Bearer {}", env.server_token))
         .send()
         .await
@@ -118,7 +118,7 @@ async fn e2e_authentication_required() {
 
     // Test without authentication - should fail
     let response = client
-        .get(&env.server_url())
+        .get(env.server_url())
         .send()
         .await
         .unwrap();
@@ -127,7 +127,7 @@ async fn e2e_authentication_required() {
 
     // Test with wrong token - should fail
     let response = client
-        .get(&env.server_url())
+        .get(env.server_url())
         .header("Authorization", "Bearer wrong_token")
         .send()
         .await
@@ -137,7 +137,7 @@ async fn e2e_authentication_required() {
 
     // Test with correct token - should succeed (but no content yet)
     let response = client
-        .get(&env.server_url())
+        .get(env.server_url())
         .header("Authorization", format!("Bearer {}", env.server_token))
         .send()
         .await
@@ -155,7 +155,7 @@ async fn e2e_content_type_detection() {
 
     // Test 1: Text content
     client
-        .post(&env.server_url())
+        .post(env.server_url())
         .header("Authorization", format!("Bearer {}", env.server_token))
         .json(&serde_json::json!({
             "contentType": "text/plain",
@@ -166,7 +166,7 @@ async fn e2e_content_type_detection() {
         .unwrap();
 
     let response = client
-        .get(&env.server_url())
+        .get(env.server_url())
         .header("Authorization", format!("Bearer {}", env.server_token))
         .send()
         .await
@@ -179,7 +179,7 @@ async fn e2e_content_type_detection() {
     let base64_image = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
 
     client
-        .post(&env.server_url())
+        .post(env.server_url())
         .header("Authorization", format!("Bearer {}", env.server_token))
         .json(&serde_json::json!({
             "contentType": "image/png",
@@ -190,7 +190,7 @@ async fn e2e_content_type_detection() {
         .unwrap();
 
     let response = client
-        .get(&env.server_url())
+        .get(env.server_url())
         .header("Authorization", format!("Bearer {}", env.server_token))
         .send()
         .await
@@ -202,7 +202,7 @@ async fn e2e_content_type_detection() {
 
     // Test 3: File content
     client
-        .post(&env.server_url())
+        .post(env.server_url())
         .header("Authorization", format!("Bearer {}", env.server_token))
         .json(&serde_json::json!({
             "contentType": "application/json",
@@ -214,7 +214,7 @@ async fn e2e_content_type_detection() {
         .unwrap();
 
     let response = client
-        .get(&env.server_url())
+        .get(env.server_url())
         .header("Authorization", format!("Bearer {}", env.server_token))
         .send()
         .await
@@ -234,7 +234,7 @@ async fn e2e_content_overwrite() {
 
     // Upload first content
     client
-        .post(&env.server_url())
+        .post(env.server_url())
         .header("Authorization", format!("Bearer {}", env.server_token))
         .json(&serde_json::json!({
             "contentType": "text/plain",
@@ -246,7 +246,7 @@ async fn e2e_content_overwrite() {
 
     // Upload second content (should overwrite)
     client
-        .post(&env.server_url())
+        .post(env.server_url())
         .header("Authorization", format!("Bearer {}", env.server_token))
         .json(&serde_json::json!({
             "contentType": "text/plain",
@@ -258,7 +258,7 @@ async fn e2e_content_overwrite() {
 
     // Verify only second content exists
     let response = client
-        .get(&env.server_url())
+        .get(env.server_url())
         .header("Authorization", format!("Bearer {}", env.server_token))
         .send()
         .await
@@ -277,7 +277,7 @@ async fn e2e_error_handling() {
 
     // Test invalid JSON
     let response = client
-        .post(&env.server_url())
+        .post(env.server_url())
         .header("Authorization", format!("Bearer {}", env.server_token))
         .header("Content-Type", "application/json")
         .body("invalid json")
@@ -289,7 +289,7 @@ async fn e2e_error_handling() {
 
     // Test missing required fields
     let response = client
-        .post(&env.server_url())
+        .post(env.server_url())
         .header("Authorization", format!("Bearer {}", env.server_token))
         .json(&serde_json::json!({
             "contentType": "text/plain"

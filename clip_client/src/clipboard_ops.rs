@@ -50,11 +50,11 @@ pub fn write_file_to_clipboard(filename: &str, base64_data: &str) -> Result<Stri
 /// Process clipboard content based on its type
 pub fn process_clipboard_content(content: ClipboardContent, verbose: bool) -> Result<()> {
     match content {
-        ClipboardContent::Text(text) => {
+        ClipboardContent::Text { data } => {
             if verbose {
-                println!("📄 Content type: Text (length: {} bytes)", text.len());
+                println!("📄 Content type: Text (length: {} bytes)", data.len());
             }
-            write_text_to_clipboard(&text)?;
+            write_text_to_clipboard(&data)?;
             if !verbose {
                 println!("💡 Text content ready to paste");
             }

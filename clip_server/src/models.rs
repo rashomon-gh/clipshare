@@ -6,21 +6,21 @@ use std::fmt;
 
 /// Supported content types for clipboard data
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-#[serde(tag = "type", content = "data")]
+#[serde(tag = "type")]
 pub enum ClipboardContent {
     #[serde(rename = "text")]
-    Text(String),
+    Text { data: String },
     #[serde(rename = "image")]
-    Image { data: String, mime_type: String },
+    Image { data: String, #[serde(rename = "mimeType")] mime_type: String },
     #[serde(rename = "file")]
-    File { name: String, data: String, mime_type: String },
+    File { name: String, data: String, #[serde(rename = "mimeType")] mime_type: String },
 }
 
 impl ClipboardContent {
     /// Get the MIME type for this content
     pub fn mime_type(&self) -> &str {
         match self {
-            ClipboardContent::Text(_) => "text/plain",
+            ClipboardContent::Text { .. } => "text/plain",
             ClipboardContent::Image { mime_type, .. } => mime_type,
             ClipboardContent::File { mime_type, .. } => mime_type,
         }
@@ -29,16 +29,17 @@ impl ClipboardContent {
     /// Get the size in bytes (estimated for base64 encoded data)
     pub fn size_bytes(&self) -> usize {
         match self {
-            ClipboardContent::Text(text) => text.len(),
+            ClipboardContent::Text { data } => data.len(),
             ClipboardContent::Image { data, .. } => data.len(),
             ClipboardContent::File { data, .. } => data.len(),
         }
     }
 
     /// Get a unique hash of this content for change detection
+    #[allow(dead_code)]
     pub fn content_hash(&self) -> String {
         match self {
-            ClipboardContent::Text(text) => format!("text:{}", text),
+            ClipboardContent::Text { data } => format!("text:{}", data),
             ClipboardContent::Image { data, .. } => format!("image:{}", data),
             ClipboardContent::File { name, data, .. } => format!("file:{}:{}", name, data),
         }
@@ -48,7 +49,7 @@ impl ClipboardContent {
 impl fmt::Display for ClipboardContent {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            ClipboardContent::Text(text) => write!(f, "Text ({} bytes)", text.len()),
+            ClipboardContent::Text { data } => write!(f, "Text ({} bytes)", data.len()),
             ClipboardContent::Image { mime_type, .. } => write!(f, "Image ({})", mime_type),
             ClipboardContent::File { name, mime_type, .. } => write!(f, "File {} ({})", name, mime_type),
         }
@@ -134,7 +135,7 @@ mod tests {
 
     #[test]
     fn test_clipboard_content_mime_type() {
-        let text = ClipboardContent::Text("hello".to_string());
+        let text = ClipboardContent::Text { data: "hello".to_string() };
         assert_eq!(text.mime_type(), "text/plain");
 
         let image = ClipboardContent::Image {
@@ -146,7 +147,7 @@ mod tests {
 
     #[test]
     fn test_clipboard_content_size() {
-        let text = ClipboardContent::Text("hello".to_string());
+        let text = ClipboardContent::Text { data: "hello".to_string() };
         assert_eq!(text.size_bytes(), 5);
 
         let image = ClipboardContent::Image {
@@ -158,9 +159,9 @@ mod tests {
 
     #[test]
     fn test_clipboard_content_hash() {
-        let text1 = ClipboardContent::Text("hello".to_string());
-        let text2 = ClipboardContent::Text("hello".to_string());
-        let text3 = ClipboardContent::Text("world".to_string());
+        let text1 = ClipboardContent::Text { data: "hello".to_string() };
+        let text2 = ClipboardContent::Text { data: "hello".to_string() };
+        let text3 = ClipboardContent::Text { data: "world".to_string() };
 
         assert_eq!(text1.content_hash(), text2.content_hash());
         assert_ne!(text1.content_hash(), text3.content_hash());

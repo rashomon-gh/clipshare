@@ -1659,6 +1659,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "tests"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "clip_server",
+ "reqwest",
+ "serde_json",
+ "tokio",
+]
+
+[[package]]
 name = "thread_local"
 version = "1.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"

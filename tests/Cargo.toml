@@ -1,0 +1,17 @@
+[package]
+name = "tests"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+# Workspace members for integration testing
+clip_server = { path = "../clip_server" }
+
+# HTTP client for testing
+reqwest = { version = "0.11", features = ["json"] }
+# Async runtime
+tokio = { version = "1.35", features = ["full"] }
+# Web framework for testing server setup
+axum = "0.7"
+# Serialization
+serde_json = "1.0"
