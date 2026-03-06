@@ -12,32 +12,6 @@ ClipShare consists of three components:
 - **clip_client**: A daemon that continuously monitors the server and automatically updates your system clipboard
 - **clip_token_gen**: Secure token generation tool for authentication
 
-Perfect for integration with iOS Shortcuts to share text, images, and files between your iPhone/iPad and PC/Mac!
-
-## ✨ Features
-
-- 🔄 **Real-time Sharing**: Instant clipboard synchronization across devices
-- 🤖 **Background Daemon**: Automatically monitors server and updates clipboard
-- 🌐 **Network Accessible**: Server accessible from local Wi-Fi network
-- 🔐 **Token Authentication**: Secure Bearer token authentication for all requests
-- 📝 **Multi-Format Support**: Text, images, and files with proper MIME type handling
-- 💾 **In-Memory Storage**: Fast performance with `Arc<RwLock<T>>` state management
-- 🛡️ **Thread-Safe**: Concurrent access handling for multiple requests
-- 📊 **Comprehensive Logging**: Detailed request/response logging with tracing
-- 🎯 **Simple API**: Clean REST endpoints for easy integration
-- 🔧 **Error Handling**: Graceful error handling with helpful messages
-- 🔑 **Token Generator**: Built-in secure token generation tool
-- 🚀 **Cross-Platform**: Runs on Windows, macOS, and Linux as native services
-- 🧪 **Comprehensive Testing**: 44 tests covering unit and integration scenarios
-- ✅ **CI/CD Pipeline**: GitHub Actions workflow for automated testing
-- 🏗️ **Modular Architecture**: Clean separation of concerns with dedicated modules
-- 📦 **Service Integration**: Run as system service on all major platforms
-
-## 🏗️ Architecture
-
-```
-iOS Shortcuts ──> clip_server (0.0.0.0:3000) ──> clip_client ──> System Clipboard
-```
 
 ### Components
 
