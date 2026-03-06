@@ -20,3 +20,7 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 http-body-util = "0.1"
 # Environment variable handling
 dotenvy = "0.15"
+# Additional HTTP utilities
+mime = "0.3"
+# Base64 encoding for binary data
+base64 = "0.21"

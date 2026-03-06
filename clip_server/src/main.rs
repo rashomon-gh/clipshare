@@ -16,7 +16,7 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 /// Application state that holds the clipboard content
 /// Arc<RwLock<>> allows multiple concurrent reads/writes across async tasks
-type ClipboardState = Arc<RwLock<Option<String>>>;
+type ClipboardState = Arc<RwLock<Option<ClipboardContent>>>;
 
 /// Authentication state containing the expected token
 type AuthState = Arc<String>;
@@ -24,10 +24,47 @@ type AuthState = Arc<String>;
 /// Environment variable name for the authentication token
 const TOKEN_ENV_VAR: &str = "CLIPSHARE_TOKEN";
 
-/// Request payload for POST /clipboard
+/// Supported content types for clipboard data
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "type", content = "data")]
+enum ClipboardContent {
+    #[serde(rename = "text")]
+    Text(String),
+    #[serde(rename = "image")]
+    Image { data: String, mime_type: String },
+    #[serde(rename = "file")]
+    File { name: String, data: String, mime_type: String },
+}
+
+impl ClipboardContent {
+    /// Get the MIME type for this content
+    fn mime_type(&self) -> &str {
+        match self {
+            ClipboardContent::Text(_) => "text/plain",
+            ClipboardContent::Image { mime_type, .. } => mime_type,
+            ClipboardContent::File { mime_type, .. } => mime_type,
+        }
+    }
+
+    /// Get the size in bytes (estimated for base64 encoded data)
+    fn size_bytes(&self) -> usize {
+        match self {
+            ClipboardContent::Text(text) => text.len(),
+            ClipboardContent::Image { data, .. } => data.len(),
+            ClipboardContent::File { data, .. } => data.len(),
+        }
+    }
+}
+
+/// Request payload for POST /clipboard (supports all content types)
 #[derive(Debug, Deserialize, Serialize)]
 struct ClipboardRequest {
-    content: String,
+    #[serde(rename = "contentType")]
+    content_type: String,
+    #[serde(rename = "data")]
+    data: String,
+    #[serde(rename = "filename")]
+    filename: Option<String>,
 }
 
 /// Response payload for successful operations
@@ -105,16 +142,50 @@ async fn auth_middleware(
 
 /// POST /clipboard endpoint
 /// Receives clipboard content and stores it in the application state
+/// Supports text, images (base64 encoded), and files (base64 encoded)
 async fn set_clipboard(
     State(state): State<ClipboardState>,
     Json(payload): Json<ClipboardRequest>,
 ) -> Result<Json<SuccessResponse>, AppError> {
-    info!("Received clipboard content (length: {} bytes)", payload.content.len());
+    info!(
+        "Received clipboard content (type: {}, data length: {} bytes)",
+        payload.content_type,
+        payload.data.len()
+    );
+
+    let content = if payload.content_type.starts_with("text/") {
+        ClipboardContent::Text(payload.data.clone())
+    } else if payload.content_type.starts_with("image/") {
+        ClipboardContent::Image {
+            data: payload.data.clone(),
+            mime_type: payload.content_type.clone(),
+        }
+    } else {
+        // Handle as file
+        ClipboardContent::File {
+            name: payload.filename.clone().unwrap_or_else(|| {
+                // Simple extension mapping for common types
+                let ext = if payload.content_type.contains("pdf") {
+                    "pdf"
+                } else if payload.content_type.contains("zip") {
+                    "zip"
+                } else if payload.content_type.contains("json") {
+                    "json"
+                } else {
+                    "bin"
+                };
+                format!("unknown.{}", ext)
+            }),
+            data: payload.data.clone(),
+            mime_type: payload.content_type.clone(),
+        }
+    };
 
     // Acquire write lock and update the state
     match state.write() {
         Ok(mut guard) => {
-            *guard = Some(payload.content.clone());
+            *guard = Some(content);
+            info!("Clipboard content updated successfully");
             Ok(Json(SuccessResponse {
                 status: "success".to_string(),
                 message: "Clipboard content updated successfully".to_string(),
@@ -130,13 +201,17 @@ async fn set_clipboard(
 }
 
 /// GET /clipboard endpoint
-/// Returns the currently stored clipboard content
-async fn get_clipboard(State(state): State<ClipboardState>) -> Result<Json<String>, AppError> {
+/// Returns the currently stored clipboard content with appropriate content type
+async fn get_clipboard(State(state): State<ClipboardState>) -> Result<Json<ClipboardContent>, AppError> {
     // Acquire read lock and retrieve the content
     match state.read() {
         Ok(guard) => {
             if let Some(content) = guard.as_ref() {
-                info!("Serving clipboard content (length: {} bytes)", content.len());
+                info!(
+                    "Serving clipboard content (type: {}, size: {} bytes)",
+                    content.mime_type(),
+                    content.size_bytes()
+                );
                 Ok(Json(content.clone()))
             } else {
                 warn!("Attempted to retrieve clipboard content, but none is available");
@@ -199,6 +274,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("🚀 Clipboard Server starting on http://0.0.0.0:3000");
     info!("📡 Server is accessible from your local Wi-Fi network");
     info!("🔒 Authentication is enabled - all requests require a valid Bearer token");
+    info!("📝 Supporting content types: text, images, files");
 
     // Start the server
     axum::serve(listener, app).await?;

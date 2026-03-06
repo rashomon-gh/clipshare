@@ -194,6 +194,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "arboard",
+ "base64",
  "reqwest",
  "serde",
  "serde_json",
@@ -206,8 +207,10 @@ version = "0.1.0"
 dependencies = [
  "arc-swap",
  "axum",
+ "base64",
  "dotenvy",
  "http-body-util",
+ "mime",
  "serde",
  "serde_json",
  "tokio",
