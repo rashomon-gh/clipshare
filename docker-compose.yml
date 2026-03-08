@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  clipshare:
+    build: .
+    container_name: clipshare-server
+    ports:
+      - "3000:3000"
+    environment:
+      # Generate a secure token using: openssl rand -base64 32
+      - CLIPSHARE_TOKEN=change_this_to_a_secure_token
+      - RUST_LOG=info
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/clipboard"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    # Optional: Add resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 128M
+        reservations:
+          cpus: '0.25'
+          memory: 64M

@@ -85,6 +85,60 @@ $env:CLIPSHARE_TOKEN="your_generated_token_here"
 
 ### Installation
 
+#### Option 1: Docker (Recommended for Server)
+
+Build and run the server using Docker:
+
+```bash
+# Generate a token first
+TOKEN=$(openssl rand -base64 32)
+
+# Build the Docker image
+docker build -t clipshare-server .
+
+# Run the server
+docker run -d \
+  --name clipshare \
+  -p 3000:3000 \
+  -e CLIPSHARE_TOKEN=$TOKEN \
+  -e RUST_LOG=info \
+  clipshare-server
+
+# View logs
+docker logs -f clipshare
+
+# Get your token
+docker inspect clipshare | grep CLIPSHARE_TOKEN
+```
+
+**Docker Compose (Optional):**
+
+Create `docker-compose.yml`:
+```yaml
+version: '3.8'
+services:
+  clipshare:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - CLIPSHARE_TOKEN=your_secure_token_here
+      - RUST_LOG=info
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/clipboard"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+```
+
+Then run:
+```bash
+docker-compose up -d
+```
+
+#### Option 2: Build from Source
+
 1. Clone the repository:
 ```bash
 git clone https://codeberg.org/rashomon/clipshare.git
@@ -411,40 +465,43 @@ const TOKEN_ENV_VAR: &str = "CLIPSHARE_TOKEN";  // Environment variable for auth
 clipshare/
 ├── .github/
 │   └── workflows/
-│       └── test.yml         # CI/CD pipeline for automated testing
-├── Cargo.toml               # Workspace configuration
+│       └── test.yml              # CI/CD pipeline for automated testing
+├── Cargo.toml                    # Workspace configuration
+├── Dockerfile                    # Server Docker image
+├── docker-compose.yml            # Docker Compose configuration
+├── .dockerignore                 # Docker build exclusions
 ├── clip_server/
-│   ├── Cargo.toml           # Server dependencies
+│   ├── Cargo.toml                # Server dependencies
 │   └── src/
-│       ├── main.rs          # Server entry point
-│       ├── lib.rs           # Library exports
-│       ├── auth.rs          # Authentication middleware
-│       ├── config.rs        # Server configuration
-│       ├── handlers.rs      # HTTP request handlers
-│       └── models.rs        # Data models and types
+│       ├── main.rs               # Server entry point
+│       ├── lib.rs                # Library exports
+│       ├── auth.rs               # Authentication middleware
+│       ├── config.rs             # Server configuration
+│       ├── handlers.rs           # HTTP request handlers
+│       └── models.rs             # Data models and types
 ├── clip_client/
-│   ├── Cargo.toml           # Client dependencies
+│   ├── Cargo.toml                # Client dependencies
 │   └── src/
-│       ├── main.rs          # Client entry point
-│       ├── api.rs           # HTTP client operations
-│       ├── clipboard_ops.rs # Clipboard operations
-│       ├── config.rs        # Client configuration
-│       ├── daemon.rs        # Background daemon mode
-│       └── models.rs        # Data models for responses
+│       ├── main.rs               # Client entry point
+│       ├── api.rs                # HTTP client operations
+│       ├── clipboard_ops.rs      # Clipboard operations
+│       ├── config.rs             # Client configuration
+│       ├── daemon.rs             # Background daemon mode
+│       └── models.rs             # Data models for responses
 ├── clip_token_gen/
-│   ├── Cargo.toml           # Token generator dependencies
+│   ├── Cargo.toml                # Token generator dependencies
 │   └── src/
-│       └── main.rs          # Token generation utility
+│       └── main.rs               # Token generation utility
 ├── tests/
-│   ├── Cargo.toml           # Integration test dependencies
+│   ├── Cargo.toml                # Integration test dependencies
 │   └── src/
-│       └── e2e_tests.rs     # End-to-end integration tests
+│       └── e2e_tests.rs          # End-to-end integration tests
 └── services/
-    ├── README.md            # Service installation guide
+    ├── README.md                 # Service installation guide
     ├── clipshare-daemon.service  # Linux systemd service
     ├── com.clipshare.daemon.plist # macOS LaunchDaemon
     ├── install-clipshare-service.ps1 # Windows Service installer
-    └── clipshare-startup.bat      # Windows startup script
+    └── clipshare-startup.bat     # Windows startup script
 ```
 
 
@@ -480,6 +537,45 @@ cargo check
 
 # Run linter
 cargo clippy --all-targets --all-features -- -D warnings
+```
+
+### Docker Development
+
+**Build the Docker image:**
+
+```bash
+docker build -t clipshare-server .
+```
+
+**Run the container:**
+
+```bash
+# Generate a secure token
+TOKEN=$(openssl rand -base64 32)
+
+# Run the server
+docker run -d \
+  --name clipshare \
+  -p 3000:3000 \
+  -e CLIPSHARE_TOKEN=$TOKEN \
+  -e RUST_LOG=info \
+  clipshare-server
+
+# View logs
+docker logs -f clipshare
+```
+
+**Docker Compose:**
+
+```bash
+# Start the service
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop the service
+docker-compose down
 ```
 
 
