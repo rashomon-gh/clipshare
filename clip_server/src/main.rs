@@ -4,13 +4,16 @@ mod handlers;
 mod models;
 
 use auth::{load_auth_token, AuthState, TOKEN_ENV_VAR};
+use axum::Router;
 use config::{DEFAULT_LOG_FILTER, DEFAULT_SERVER_ADDRESS, DEFAULT_SERVER_PORT};
-use handlers::{create_router, ClipboardState};
+use handlers::{create_router, ApiDoc, ClipboardState};
 use std::net::SocketAddr;
 use std::sync::Arc;
 use tokio::net::TcpListener;
 use tracing::info;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+use utoipa::OpenApi;
+use utoipa_swagger_ui::SwaggerUi;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -45,13 +48,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let clipboard_state: ClipboardState = Arc::new(std::sync::RwLock::new(None));
     let auth_state: AuthState = Arc::new(auth_token);
 
-    // Build the application router with authentication middleware
-    let app = create_router()
+    // Build the clipboard API router with authentication middleware
+    let clipboard_router = create_router()
         .layer(axum::middleware::from_fn_with_state(
             auth_state.clone(),
             auth::auth_middleware,
         ))
         .with_state(clipboard_state);
+
+    // Combine clipboard router with Swagger UI
+    let app = Router::new()
+        .merge(clipboard_router)
+        .merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", ApiDoc::openapi()));
 
     // Bind to 0.0.0.0:3000 to accept connections from the local network
     let addr = SocketAddr::from(([0, 0, 0, 0], config::DEFAULT_SERVER_PORT));
@@ -64,6 +72,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("📡 Server is accessible from your local Wi-Fi network");
     info!("🔒 Authentication is enabled - all requests require a valid Bearer token");
     info!("📝 Supporting content types: text, images, files");
+    info!("📚 API documentation available at http://{}:{}/swagger-ui", DEFAULT_SERVER_ADDRESS, DEFAULT_SERVER_PORT);
 
     // Start the server
     axum::serve(listener, app).await?;

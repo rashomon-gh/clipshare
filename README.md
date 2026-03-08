@@ -237,6 +237,20 @@ For images:
 
 ## 🔌 API Documentation
 
+### Interactive API Documentation (Swagger UI)
+
+The server provides interactive API documentation via Swagger UI. Once the server is running, access it at:
+
+```
+http://localhost:3000/swagger-ui
+```
+
+This provides:
+- Interactive API explorer
+- Request/response schemas
+- Try-it-out functionality for testing endpoints
+- Authentication support (click "Authorize" and enter your Bearer token)
+
 ### POST /clipboard
 
 Store clipboard content on the server. Supports text, images, and files.

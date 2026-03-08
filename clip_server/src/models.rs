@@ -7,9 +7,10 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 use std::fmt;
+use utoipa::ToSchema;
 
 /// Supported content types for clipboard data
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, ToSchema)]
 #[serde(tag = "type")]
 pub enum ClipboardContent {
     #[serde(rename = "text")]
@@ -72,20 +73,25 @@ impl fmt::Display for ClipboardContent {
 }
 
 /// Request payload for POST /clipboard (supports all content types)
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, ToSchema)]
 pub struct ClipboardRequest {
+    /// MIME type of the content (e.g., "text/plain", "image/png", "application/pdf")
     #[serde(rename = "contentType")]
     pub content_type: String,
+    /// Base64 encoded data for images/files, plain text for text content
     #[serde(rename = "data")]
     pub data: String,
+    /// Optional filename for file uploads
     #[serde(rename = "filename")]
     pub filename: Option<String>,
 }
 
 /// Response payload for successful operations
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, ToSchema)]
 pub struct SuccessResponse {
+    /// Status indicator ("success")
     pub status: String,
+    /// Human-readable message
     pub message: String,
 }
 
@@ -99,9 +105,11 @@ impl SuccessResponse {
 }
 
 /// Error response for API errors
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, ToSchema)]
 pub struct ErrorResponse {
+    /// Status indicator ("error")
     pub status: String,
+    /// Human-readable error message
     pub message: String,
 }
 

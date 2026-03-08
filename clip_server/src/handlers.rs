@@ -1,9 +1,38 @@
 //! HTTP request handlers for the clipboard API
 
-use super::models::{AppError, ClipboardContent, ClipboardRequest, SuccessResponse};
+use super::models::{AppError, ClipboardContent, ClipboardRequest, ErrorResponse, SuccessResponse};
 use axum::{extract::State, routing, Json, Router};
 use std::sync::{Arc, RwLock};
 use tracing::{info, warn};
+use utoipa::OpenApi;
+
+/// OpenAPI specification for the ClipShare API
+#[derive(OpenApi)]
+#[openapi(
+    paths(set_clipboard, get_clipboard),
+    components(schemas(ClipboardContent, ClipboardRequest, SuccessResponse, ErrorResponse)),
+    tags(
+        (name = "clipboard", description = "Clipboard management API")
+    ),
+    modifiers(&SecurityAddon)
+)]
+pub struct ApiDoc;
+
+/// Security addon for OpenAPI to add Bearer auth
+pub struct SecurityAddon;
+
+impl utoipa::Modify for SecurityAddon {
+    fn modify(&self, openapi: &mut utoipa::openapi::OpenApi) {
+        if let Some(components) = openapi.components.as_mut() {
+            components.add_security_scheme(
+                "bearer_auth",
+                utoipa::openapi::security::SecurityScheme::Http(
+                    utoipa::openapi::security::Http::new(utoipa::openapi::security::HttpAuthScheme::Bearer),
+                ),
+            );
+        }
+    }
+}
 
 /// Application state that holds the clipboard content
 /// Arc<RwLock<>> allows multiple concurrent reads/writes across async tasks
@@ -12,6 +41,19 @@ pub type ClipboardState = Arc<RwLock<Option<ClipboardContent>>>;
 /// POST /clipboard endpoint
 /// Receives clipboard content and stores it in the application state
 /// Supports text, images (base64 encoded), and files (base64 encoded)
+#[utoipa::path(
+    post,
+    path = "/clipboard",
+    request_body = ClipboardRequest,
+    responses(
+        (status = 200, description = "Clipboard content updated successfully", body = SuccessResponse),
+        (status = 401, description = "Unauthorized - invalid or missing Bearer token", body = ErrorResponse),
+        (status = 500, description = "Internal server error", body = ErrorResponse)
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
 pub async fn set_clipboard(
     State(state): State<ClipboardState>,
     Json(payload): Json<ClipboardRequest>,
@@ -72,6 +114,19 @@ pub async fn set_clipboard(
 
 /// GET /clipboard endpoint
 /// Returns the currently stored clipboard content with appropriate content type
+#[utoipa::path(
+    get,
+    path = "/clipboard",
+    responses(
+        (status = 200, description = "Clipboard content retrieved successfully", body = ClipboardContent),
+        (status = 401, description = "Unauthorized - invalid or missing Bearer token", body = ErrorResponse),
+        (status = 404, description = "No clipboard content available", body = ErrorResponse),
+        (status = 500, description = "Internal server error", body = ErrorResponse)
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
 pub async fn get_clipboard(
     State(state): State<ClipboardState>,
 ) -> Result<Json<ClipboardContent>, AppError> {

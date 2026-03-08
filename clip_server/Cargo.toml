@@ -32,6 +32,9 @@ dotenvy = "0.15"
 mime = "0.3"
 # Base64 encoding for binary data
 base64 = "0.21"
+# OpenAPI/Swagger documentation
+utoipa = "5.2"
+utoipa-swagger-ui = { version = "8.1", features = ["axum"] }
 
 [dev-dependencies]
 # HTTP client for testing
