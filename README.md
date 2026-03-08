@@ -233,166 +233,14 @@ For images:
 ```
 
 
-
-
 ## 🔌 API Documentation
 
-### Interactive API Documentation (Swagger UI)
 
 The server provides interactive API documentation via Swagger UI. Once the server is running, access it at:
 
 ```
 http://localhost:3000/swagger-ui
 ```
-
-This provides:
-- Interactive API explorer
-- Request/response schemas
-- Try-it-out functionality for testing endpoints
-- Authentication support (click "Authorize" and enter your Bearer token)
-
-### POST /clipboard
-
-Store clipboard content on the server. Supports text, images, and files.
-
-**Request (Text):**
-```http
-POST /clipboard HTTP/1.1
-Content-Type: application/json
-Authorization: Bearer your_generated_token
-
-{
-  "contentType": "text/plain",
-  "data": "Your clipboard text here"
-}
-```
-
-**Request (Image - Base64 Encoded):**
-```http
-POST /clipboard HTTP/1.1
-Content-Type: application/json
-Authorization: Bearer your_generated_token
-
-{
-  "contentType": "image/png",
-  "data": "iVBORw0KGgoAAAANSUhEUgAAAAUA..."
-}
-```
-
-**Request (File - Base64 Encoded):**
-```http
-POST /clipboard HTTP/1.1
-Content-Type: application/json
-Authorization: Bearer your_generated_token
-
-{
-  "contentType": "application/pdf",
-  "filename": "document.pdf",
-  "data": "JVBERi0xLjQKJe..."
-}
-```
-
-**Response (Success):**
-```http
-HTTP/1.1 200 OK
-Content-Type: application/json
-
-{
-  "status": "success",
-  "message": "Clipboard content updated successfully"
-}
-```
-
-**Response (Error):**
-```http
-HTTP/1.1 500 Internal Server Error
-Content-Type: application/json
-
-{
-  "status": "error",
-  "message": "Failed to update clipboard content"
-}
-```
-
-**Response (Unauthorized):**
-```http
-HTTP/1.1 401 Unauthorized
-Content-Type: application/json
-
-{
-  "status": "error",
-  "message": "Unauthorized request"
-}
-```
-
-### GET /clipboard
-
-Retrieve stored clipboard content.
-
-**Request:**
-```http
-GET /clipboard HTTP/1.1
-Authorization: Bearer your_generated_token
-```
-
-**Response (Success - Text):**
-```http
-HTTP/1.1 200 OK
-Content-Type: application/json
-
-{
-  "type": "text",
-  "data": "Your clipboard text here"
-}
-```
-
-**Response (Success - Image):**
-```http
-HTTP/1.1 200 OK
-Content-Type: application/json
-
-{
-  "type": "image",
-  "data": "base64_encoded_image_data",
-  "mimeType": "image/png"
-}
-```
-
-**Response (Success - File):**
-```http
-HTTP/1.1 200 OK
-Content-Type: application/json
-
-{
-  "type": "file",
-  "name": "document.pdf",
-  "data": "base64_encoded_file_data",
-  "mimeType": "application/pdf"
-}
-```
-
-**Response (No Content):**
-```http
-HTTP/1.1 404 Not Found
-Content-Type: application/json
-
-{
-  "status": "error",
-  "message": "No clipboard content available"
-}
-```
-
-**Response (Unauthorized):**
-```http
-HTTP/1.1 401 Unauthorized
-Content-Type: application/json
-
-{
-  "status": "error",
-  "message": "Unauthorized request"
-}
-```
-
 
 
 ## 🛠️ Development
@@ -403,12 +251,6 @@ Content-Type: application/json
 ```bash
 # Run all tests (unit + integration)
 cargo test --all
-
-# Run tests with output
-cargo test --all -- --nocapture
-
-# Run tests in parallel
-cargo test --all --jobs 4
 ```
 
 
