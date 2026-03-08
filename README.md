@@ -139,13 +139,6 @@ docker-compose up -d
 
 #### Option 2: Build from Source
 
-1. Clone the repository:
-```bash
-git clone https://codeberg.org/rashomon/clipshare.git
-cd clipshare
-```
-
-2. Build the project:
 ```bash
 cargo build --release
 ```
@@ -458,52 +451,6 @@ const TOKEN_ENV_VAR: &str = "CLIPSHARE_TOKEN";  // Environment variable for auth
 
 
 ## 🛠️ Development
-
-### Project Structure
-
-```
-clipshare/
-├── .github/
-│   └── workflows/
-│       └── test.yml              # CI/CD pipeline for automated testing
-├── Cargo.toml                    # Workspace configuration
-├── Dockerfile                    # Server Docker image
-├── docker-compose.yml            # Docker Compose configuration
-├── .dockerignore                 # Docker build exclusions
-├── clip_server/
-│   ├── Cargo.toml                # Server dependencies
-│   └── src/
-│       ├── main.rs               # Server entry point
-│       ├── lib.rs                # Library exports
-│       ├── auth.rs               # Authentication middleware
-│       ├── config.rs             # Server configuration
-│       ├── handlers.rs           # HTTP request handlers
-│       └── models.rs             # Data models and types
-├── clip_client/
-│   ├── Cargo.toml                # Client dependencies
-│   └── src/
-│       ├── main.rs               # Client entry point
-│       ├── api.rs                # HTTP client operations
-│       ├── clipboard_ops.rs      # Clipboard operations
-│       ├── config.rs             # Client configuration
-│       ├── daemon.rs             # Background daemon mode
-│       └── models.rs             # Data models for responses
-├── clip_token_gen/
-│   ├── Cargo.toml                # Token generator dependencies
-│   └── src/
-│       └── main.rs               # Token generation utility
-├── tests/
-│   ├── Cargo.toml                # Integration test dependencies
-│   └── src/
-│       └── e2e_tests.rs          # End-to-end integration tests
-└── services/
-    ├── README.md                 # Service installation guide
-    ├── clipshare-daemon.service  # Linux systemd service
-    ├── com.clipshare.daemon.plist # macOS LaunchDaemon
-    ├── install-clipshare-service.ps1 # Windows Service installer
-    └── clipshare-startup.bat     # Windows startup script
-```
-
 
 
 ### Testing
