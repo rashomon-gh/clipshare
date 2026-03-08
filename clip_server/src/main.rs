@@ -72,7 +72,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("📡 Server is accessible from your local Wi-Fi network");
     info!("🔒 Authentication is enabled - all requests require a valid Bearer token");
     info!("📝 Supporting content types: text, images, files");
-    info!("📚 API documentation available at http://{}:{}/swagger-ui", DEFAULT_SERVER_ADDRESS, DEFAULT_SERVER_PORT);
+    info!(
+        "📚 API documentation available at http://{}:{}/swagger-ui",
+        DEFAULT_SERVER_ADDRESS, DEFAULT_SERVER_PORT
+    );
 
     // Start the server
     axum::serve(listener, app).await?;
