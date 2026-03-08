@@ -187,7 +187,7 @@ Press `Ctrl+C` to stop the daemon.
 
 #### Install as System Service
 
-> [!INFO]
+> [!NOTE]
 > 📖 **[Complete Service Setup Guide →](services/README.md)**
 
 For automatic startup and background operation, install the client as a system service:
@@ -203,6 +203,9 @@ For automatic startup and background operation, install the client as a system s
 Create an iOS Shortcut to send clipboard content to your PC:
 
 ### Shortcut Configuration
+
+> [!IMPORTANT]
+> Your iOS Shortcut needs to include the same authentication token that you set on your server. Make sure to replace `your_generated_token` with the actual token you generated using `clip_token_gen`.
 
 1. **Action**: Get Clipboard from iOS
 2. **Action**: Detect Content Type (text, image, or file)
@@ -230,8 +233,7 @@ For images:
 ```
 
 
-> [!NOTE]
-> Your iOS Shortcut needs to include the same authentication token that you set on your server. Make sure to replace `your_generated_token` with the actual token you generated using `clip_token_gen`.
+
 
 ## 🔌 API Documentation
 
