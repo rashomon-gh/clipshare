@@ -235,14 +235,6 @@ For images and files:
 
 Your iOS Shortcut needs to include the same authentication token that you set on your server. Make sure to replace `your_generated_token` with the actual token you generated using `clip_token_gen`.
 
-### Finding Your PC IP Address
-
-On Windows, run in PowerShell:
-```powershell
-ipconfig
-```
-
-Look for "IPv4 Address" under your network adapter (usually `192.168.x.x` or `10.0.x.x`)
 
 ## 🔌 API Documentation
 
@@ -455,35 +447,13 @@ clipshare/
     └── clipshare-startup.bat      # Windows startup script
 ```
 
-### Architecture
 
-The project follows a modular architecture with clear separation of concerns:
-
-**Server Components:**
-- **auth.rs**: Bearer token authentication middleware
-- **handlers.rs**: REST API endpoint handlers (GET/POST /clipboard)
-- **models.rs**: Request/response models with comprehensive validation
-- **config.rs**: Server configuration constants
-
-**Client Components:**
-- **api.rs**: HTTP client with authentication and error handling
-- **clipboard_ops.rs**: Multi-format clipboard operations (text, images, files)
-- **daemon.rs**: Continuous monitoring with change detection and graceful shutdown
-- **config.rs**: Environment-based configuration management
 
 ### Testing
-
-The project has comprehensive test coverage with **44 tests** across multiple levels:
 
 ```bash
 # Run all tests (unit + integration)
 cargo test --all
-
-# Run specific test suites
-cargo test -p clip_server     # Server unit tests (12 tests)
-cargo test -p clip_client     # Client unit tests (12 tests)
-cargo test -p clip_token_gen  # Token generator tests (2 tests)
-cargo test -p tests           # End-to-end tests (5 tests)
 
 # Run tests with output
 cargo test --all -- --nocapture
