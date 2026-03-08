@@ -13,22 +13,6 @@ ClipShare consists of three components:
 - **clip_token_gen**: Secure token generation tool for authentication
 
 
-### Components
-
-- **clip_server**: Axum-based HTTP server with async tokio runtime
-- **clip_client**: CLI tool using reqwest for HTTP and arboard for cross-platform clipboard operations
-- **clip_token_gen**: Secure token generation tool for authentication
-
-### Platform Support
-
-**Client (clip_client):**
-- ✅ **Windows 10+**: Full clipboard support (text, images, files)
-- ✅ **macOS 10.13+**: Full clipboard support (text, images, files)
-- ✅ **Linux**: Full clipboard support on Wayland and X11 (text, images, files)
-
-**Server (clip_server):**
-- ✅ **Windows, macOS, Linux**: Runs on any platform with Rust support
-
 ## 🔐 Authentication
 
 ClipShare uses Bearer token authentication to secure all API requests. Both the server and client require the same authentication token.
@@ -58,7 +42,6 @@ set CLIPSHARE_TOKEN=your_generated_token_here
 
 3. **Set the same environment variable on your client:**
 
-Use the same token value on your client machine.
 
 ### Persistent Configuration
 
@@ -73,15 +56,6 @@ $env:CLIPSHARE_TOKEN="your_generated_token_here"
 ```
 
 ## 🚀 Getting Started
-
-### Prerequisites
-
-**Platform-specific notes:**
-
-- **Linux/Wayland**: Ensure your Wayland compositor supports clipboard operations (most modern compositors like GNOME, KDE Plasma, Sway do)
-- **Linux/X11**: No additional requirements - works out of the box
-- **macOS**: Grant clipboard permissions when prompted
-- **Windows**: No additional requirements - works out of the box
 
 ### Installation
 
@@ -109,32 +83,6 @@ docker logs -f clipshare
 
 # Get your token
 docker inspect clipshare | grep CLIPSHARE_TOKEN
-```
-
-**Docker Compose (Optional):**
-
-Create `docker-compose.yml`:
-```yaml
-version: '3.8'
-services:
-  clipshare:
-    build: .
-    ports:
-      - "3000:3000"
-    environment:
-      - CLIPSHARE_TOKEN=your_secure_token_here
-      - RUST_LOG=info
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/clipboard"]
-      interval: 30s
-      timeout: 3s
-      retries: 3
-```
-
-Then run:
-```bash
-docker-compose up -d
 ```
 
 #### Option 2: Build from Source
@@ -239,13 +187,16 @@ Press `Ctrl+C` to stop the daemon.
 
 #### Install as System Service
 
+> [!INFO]
+> 📖 **[Complete Service Setup Guide →](services/README.md)**
+
 For automatic startup and background operation, install the client as a system service:
 
 - **Linux (systemd)**: See [services/README.md](services/README.md#linux-systemd)
 - **macOS (LaunchDaemon)**: See [services/README.md](services/README.md#macos-launchdaemon)
 - **Windows (Service)**: See [services/README.md](services/README.md#windows)
 
-📖 **[Complete Service Setup Guide →](services/README.md)**
+
 
 ## 📱 iOS Shortcuts Integration
 
@@ -270,7 +221,7 @@ Create an iOS Shortcut to send clipboard content to your PC:
    }
    ```
 
-For images and files:
+For images:
 ```json
 {
   "contentType": "image/png",
@@ -278,10 +229,9 @@ For images and files:
 }
 ```
 
-### Important Security Note
 
-Your iOS Shortcut needs to include the same authentication token that you set on your server. Make sure to replace `your_generated_token` with the actual token you generated using `clip_token_gen`.
-
+> [!NOTE]
+> Your iOS Shortcut needs to include the same authentication token that you set on your server. Make sure to replace `your_generated_token` with the actual token you generated using `clip_token_gen`.
 
 ## 🔌 API Documentation
 
@@ -427,27 +377,6 @@ Content-Type: application/json
 }
 ```
 
-## ⚙️ Configuration
-
-### Server Configuration
-
-Default configuration in [clip_server/src/main.rs](clip_server/src/main.rs):
-
-```rust
-const SERVER_PORT: u16 = 3000;
-const SERVER_ADDRESS: &str = "0.0.0.0";  // Accepts connections from any IP
-const TOKEN_ENV_VAR: &str = "CLIPSHARE_TOKEN";  // Environment variable for auth token
-```
-
-### Client Configuration
-
-Default configuration in [clip_client/src/main.rs](clip_client/src/main.rs):
-
-```rust
-const SERVER_URL: &str = "http://127.0.0.1:3000/clipboard";
-const REQUEST_TIMEOUT: u64 = 5;  // seconds
-const TOKEN_ENV_VAR: &str = "CLIPSHARE_TOKEN";  // Environment variable for auth token
-```
 
 
 ## 🛠️ Development
@@ -475,15 +404,6 @@ cargo build
 
 # Release build (optimized)
 cargo build --release
-
-# Run tests
-cargo test --all
-
-# Check code without building
-cargo check
-
-# Run linter
-cargo clippy --all-targets --all-features -- -D warnings
 ```
 
 ### Docker Development
